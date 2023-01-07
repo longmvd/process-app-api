@@ -1,0 +1,274 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.API\\MISA.PROCESS.API.csproj": {}
+  },
+  "projects": {
+    "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.API\\MISA.PROCESS.API.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.API\\MISA.PROCESS.API.csproj",
+        "projectName": "MISA.PROCESS.API",
+        "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.API\\MISA.PROCESS.API.csproj",
+        "packagesPath": "C:\\Users\\Acer\\.nuget\\packages\\",
+        "outputPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.API\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Acer\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {
+              "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.BL\\MISA.PROCESS.BL.csproj": {
+                "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.BL\\MISA.PROCESS.BL.csproj"
+              },
+              "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj": {
+                "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj"
+              },
+              "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj": {
+                "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.2.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.402\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.BL\\MISA.PROCESS.BL.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.BL\\MISA.PROCESS.BL.csproj",
+        "projectName": "MISA.PROCESS.BL",
+        "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.BL\\MISA.PROCESS.BL.csproj",
+        "packagesPath": "C:\\Users\\Acer\\.nuget\\packages\\",
+        "outputPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.BL\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Acer\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {
+              "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj": {
+                "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj"
+              },
+              "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj": {
+                "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.Mvc.Core": {
+              "target": "Package",
+              "version": "[2.2.5, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.402\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj",
+        "projectName": "MISA.PROCESS.Common",
+        "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj",
+        "packagesPath": "C:\\Users\\Acer\\.nuget\\packages\\",
+        "outputPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Acer\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.402\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj",
+        "projectName": "MISA.PROCESS.DL",
+        "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj",
+        "packagesPath": "C:\\Users\\Acer\\.nuget\\packages\\",
+        "outputPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Acer\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {
+              "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj": {
+                "projectPath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.Common\\MISA.PROCESS.Common.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "Dapper": {
+              "target": "Package",
+              "version": "[2.0.123, )"
+            },
+            "MySqlConnector": {
+              "target": "Package",
+              "version": "[2.2.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.402\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

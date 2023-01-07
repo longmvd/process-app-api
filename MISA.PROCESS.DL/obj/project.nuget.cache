@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "5OjYH6UesYfw28uPH4T+knn8vvxp/gyl7cs4mMQsAzDeVnGpsy+j6Cr1haybeMN2ufOTYZ9ixWrdmBCVFN9TSA==",
+  "success": true,
+  "projectFilePath": "D:\\Learning\\Misa\\MISA.PROCESS.API\\MISA.PROCESS.DL\\MISA.PROCESS.DL.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Acer\\.nuget\\packages\\dapper\\2.0.123\\dapper.2.0.123.nupkg.sha512",
+    "C:\\Users\\Acer\\.nuget\\packages\\mysqlconnector\\2.2.3\\mysqlconnector.2.2.3.nupkg.sha512"
+  ],
+  "logs": []
+}

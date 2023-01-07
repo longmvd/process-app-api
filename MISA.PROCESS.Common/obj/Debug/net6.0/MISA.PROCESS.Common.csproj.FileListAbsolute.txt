@@ -1,0 +1,14 @@
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\bin\Debug\net6.0\MISA.PROCESS.Common.deps.json
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\bin\Debug\net6.0\MISA.PROCESS.Common.dll
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\bin\Debug\net6.0\MISA.PROCESS.Common.pdb
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.csproj.AssemblyReference.cache
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.Resource.resources
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.csproj.GenerateResource.cache
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.GeneratedMSBuildEditorConfig.editorconfig
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.AssemblyInfoInputs.cache
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.AssemblyInfo.cs
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.csproj.CoreCompileInputs.cache
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.dll
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\refint\MISA.PROCESS.Common.dll
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\MISA.PROCESS.Common.pdb
+D:\Learning\Misa\MISA.PROCESS.API\MISA.PROCESS.Common\obj\Debug\net6.0\ref\MISA.PROCESS.Common.dll
