@@ -75,8 +75,10 @@ namespace MISA.PROCESS.BL
                 var deleteRoleIDs = String.Join(",", deleteRoles);
 
                 var insertRoleIDs = String.Join(",", insertRoles.Select((roleID) => $"('{id}', '{roleID}')"));
+                var deleteRole = new StringObject() {Value = deleteRoleIDs, Count = deleteRoles.Count };
+                var insertRole = new StringObject() {Value = insertRoleIDs, Count = insertRoles.Count };
 
-                response.Success = this._userDL.UpdateOneByID(id, deleteRoleIDs, insertRoleIDs, deleteRoles.Count, insertRoles.Count, entity.UserName);
+                response.Success = this._userDL.UpdateOneByID(id, deleteRole, insertRole, entity.UserName);
                 response.Data = true;
                 if (!response.Success)
                 {
@@ -94,7 +96,6 @@ namespace MISA.PROCESS.BL
             ValidateRequest(request);
             var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true};
             var paging = this._userDL.GetByFilter(request);
-            paging.StartFrom = request.PageNumber;
             response.Data = paging;
             
 

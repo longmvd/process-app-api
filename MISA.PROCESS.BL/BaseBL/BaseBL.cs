@@ -34,8 +34,8 @@ namespace MISA.PROCESS.BL
         /// <exception cref="NotImplementedException"></exception>
         public virtual ServiceResponse GetAll()
         {
-            ServiceResponse response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true};
-            response.Data =  this._baseDL.GetAll();
+            ServiceResponse response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true };
+            response.Data = this._baseDL.GetAll();
             return response;
         }
 
@@ -67,7 +67,7 @@ namespace MISA.PROCESS.BL
             };
 
             var record = this._baseDL.GetByID(id);
-            if(record != null)
+            if (record != null)
             {
                 response.Data = record;
             }
@@ -90,7 +90,7 @@ namespace MISA.PROCESS.BL
         /// Created by: MDLONG(23/12/2022)
         public virtual ServiceResponse CheckDupplicatedCode(T entity)
         {
-            var response = new ServiceResponse() { Success = true};
+            var response = new ServiceResponse() { Success = true };
             response.Success = this._baseDL.CheckDuplicatedField(entity);
             return response;
         }
@@ -126,7 +126,7 @@ namespace MISA.PROCESS.BL
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         /// Created by: MDLONG(23/12/2022)
-        public virtual ServiceResponse Insert(List<T> entities, string? detailsName, string? ignoreField = "ModifiedDate ModifiedBy")
+        public virtual ServiceResponse Insert(List<T> entities)
         {
 
             var response = ValidateData(entities);
@@ -136,6 +136,7 @@ namespace MISA.PROCESS.BL
             }
             var detailIDs = new List<object>();
             var values = "";
+            string manyToManyName = null;
             entities.ForEach((entity) =>
             {
                 var properties = entity.GetType().GetProperties();
@@ -145,6 +146,7 @@ namespace MISA.PROCESS.BL
                     var propName = property.Name;
                     var propValue = property.GetValue(entity, null);
                     var sqlIgnore = property.GetCustomAttribute<SqlIgnoreAttribute>();
+                    var manyToMany = property.GetCustomAttribute<ManyToManyAttribute>();
                     //trường nào không bị ignore thì mới lấy dữ liệu để insert database
                     if (sqlIgnore == null)
                     {
@@ -153,32 +155,25 @@ namespace MISA.PROCESS.BL
                             propValue = SetValue(entity, property, Guid.NewGuid());
                         }
 
+                        if (propName.Equals("ModifiedDate") || propName.Equals("ModifiedBy"))
+                        {
+                            continue;
+                        }
+
                         if (propName.Equals($"CreatedDate"))
                         {
                             propValue = SetValue(entity, property, DateTime.Now);
                         }
-                        if (ignoreField != null)
-                        {
-                            if (!ignoreField.Contains(propName))
-                            {
-                                value = ExpandValue(value, propValue);
-                            }
-                        }
-                        else
-                        {
-                            value = ExpandValue(value, propValue);
-                        }
+                        value = ExpandValue(value, propValue);
 
                     }
                     else
                     {
                         //nếu có bảng nhiều nhiều thì thêm id bảng đó vào để lưu sau khi lưu bảng chính
-                        if (detailsName != null)
+                        if (manyToMany != null)
                         {
-                            if (propName.Equals($"{detailsName}IDs"))
-                            {
-                                detailIDs.Add(propValue);
-                            }
+                            detailIDs.Add(propValue);
+                            manyToManyName = propName;
                         }
                     }
                 }
@@ -188,9 +183,9 @@ namespace MISA.PROCESS.BL
             });
             //bỏ dấu phẩy cuối bị thừa
             values = values.Remove(values.Length - 1);
-            var ens = new StringObject() {Count = entities.Count, Value = values, Name = typeof(T).Name };
+            var ens = new StringObject() { Count = entities.Count, Value = values, Name = typeof(T).Name };
 
-            if (detailsName != null)
+            if (manyToManyName != null)
             {
                 var details = new StringObject() { };
                 var detailsValue = "";
@@ -205,7 +200,7 @@ namespace MISA.PROCESS.BL
                         numberOfRole++;
                         return $"('{masterID}','{id}')";
                     }).ToList());
-                    if(i < entities.Count - 1)
+                    if (i < entities.Count - 1)
                     {
                         detailsValue += ",";
                     }
@@ -214,7 +209,7 @@ namespace MISA.PROCESS.BL
 
                 details.Count = numberOfRole;
                 details.Value = detailsValue;
-                details.Name = detailsName;
+                details.Name = manyToManyName;
 
                 response.Data = this._baseDL.Insert(ens, details);
             }
@@ -228,13 +223,13 @@ namespace MISA.PROCESS.BL
                 response.Success = true;
                 response.StatusCode = System.Net.HttpStatusCode.Created;
             }
-            else 
+            else
             {
                 Dictionary<string, List<string>> error = new Dictionary<string, List<string>>();
                 error.Add($"{entities.GetType().Name}", new List<string>() { Resource.UserMsg_Add_Failed });
                 response.Data = error;
                 response.Success = false;
-                response.StatusCode = System.Net.HttpStatusCode.OK; 
+                response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.ErrorCode = ErrorCode.Failed;
             }
             return response;
@@ -370,21 +365,21 @@ namespace MISA.PROCESS.BL
         /// <returns></returns>
         private ServiceResponse ValidateData(List<T> entities)
         {
-            var response = new ServiceResponse() { Success = true};
+            var response = new ServiceResponse() { Success = true };
             var fields = new Dictionary<string, string>();
             entities.ForEach(entity =>
             {
                 var properties = entity.GetType().GetProperties();
-                foreach(var property in properties)
+                foreach (var property in properties)
                 {
                     var unique = property.GetCustomAttribute<UniqueAttribute>();
                     var propName = property.Name;
                     var propValue = property.GetValue(entity);
                     if (unique != null)
                     {
-                        if(fields.ContainsKey(propName))
+                        if (fields.ContainsKey(propName))
                         {
-                            fields[propName] += propValue.ToString()+",";
+                            fields[propName] += propValue.ToString() + ",";
                         }
                         else
                         {
@@ -394,15 +389,15 @@ namespace MISA.PROCESS.BL
                 }
             });
             var errorValue = new Dictionary<string, List<string>>();
-            foreach(var key in fields.Keys)
+            foreach (var key in fields.Keys)
             {
                 var values = this._baseDL.CheckDuplicatedField(fields[key], key, typeof(T).Name);
-                if(values.Count > 0)
+                if (values.Count > 0)
                 {
                     errorValue.Add(key, values);
                 }
             }
-            if(errorValue.Count > 0)
+            if (errorValue.Count > 0)
             {
                 response.Success = false;
                 response.ErrorCode = ErrorCode.Duplicated;
@@ -435,17 +430,17 @@ namespace MISA.PROCESS.BL
         private static string ExpandValue(string value, object? propValue)
         {
 
-            if(propValue != null)
+            if (propValue != null)
             {
                 if (propValue.GetType().Name == "DateTime")
                 {
                     value += "NOW(),";
                 }
-                else if(propValue.GetType().IsEnum)
+                else if (propValue.GetType().IsEnum)
                 {
                     value += $"{(int)propValue},";
                 }
-                else if(propValue == "")
+                else if (propValue == "")
                 {
                     value += "null,";
                 }
@@ -457,7 +452,7 @@ namespace MISA.PROCESS.BL
             }
             else
             {
-                value += "null," ;
+                value += "null,";
             }
             return value;
         }

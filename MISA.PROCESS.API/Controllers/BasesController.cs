@@ -100,11 +100,11 @@ namespace MISA.PROCESS.API.Controllers
         /// <returns>ID bản ghi được thêm</returns>
         /// Author: MDLONG(12/11/2022)
         [HttpPost]
-        public virtual IActionResult Insert([FromBody] List<T> entity)
+        public virtual IActionResult Insert([FromBody] List<T> entities)
         {
             try
             {
-                var response = _baseBL.Insert(entity, null);
+                var response = _baseBL.Insert(entities);
                 if (response.Success)
                 {
                     return StatusCode((int)response.StatusCode, response.Data);

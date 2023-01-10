@@ -19,13 +19,6 @@ namespace MISA.PROCESS.DL
         public IEnumerable<T> GetAll();
 
         /// <summary>
-        /// Lấy bản ghi theo filter
-        /// </summary>
-        /// <returns>Danh sách tất cả bản ghi</returns>
-        /// Created by: MDLONG(11/11/2022)
-        public PagingResult<T> GetByFilter(PagingRequest request);
-
-        /// <summary>
         /// Lấy bản ghi theo id
         /// </summary>
         /// <returns>1 bản ghi</returns>

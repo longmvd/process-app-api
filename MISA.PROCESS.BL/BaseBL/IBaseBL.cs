@@ -37,7 +37,7 @@ namespace MISA.PROCESS.BL
         /// </summary>
         /// <returns>Id bản ghi</returns>
         /// Created by: MDLONG(23/12/2022)
-        public ServiceResponse Insert(List<T> entities, string? detailsName, string? ignoreField = "ModifiedDate ModifiedBy");
+        public ServiceResponse Insert(List<T> entities);
 
         /// <summary>
         /// Cập nhật bản ghi theo id

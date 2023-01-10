@@ -81,6 +81,7 @@ namespace MISA.PROCESS.Common.Entities
         /// Danh sách id vai trò
         /// </summary>
         [SqlIgnore]
+        [ManyToMany]
         public List<Guid>? RoleIDs { get; set; }
 
         /// <summary>

@@ -50,41 +50,6 @@ namespace MISA.PROCESS.DL
         }
 
         /// <summary>
-        /// Lấy nhân viên theo điều kiện và phân trang
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns>Phân trang</returns>
-        ///Created by: MDLONG(18/11/2022)
-        public virtual PagingResult<T> GetByFilter(PagingRequest request)
-        {
-            PagingResult<T> paging = new PagingResult<T>();
-            string storedProcedure = String.Format(Procedure.GET_BY_FILTER, typeof(T).Name);
-            var parameter = new DynamicParameters();
-            parameter.Add("@Keyword", request.Filter);
-            parameter.Add("@Offset", request.PageNumber);
-            parameter.Add("@Limit", request.PageSize);
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
-            {
-                var result = mySqlConnection.QueryMultiple(storedProcedure, parameter, commandType: CommandType.StoredProcedure);
-                var totalRecord = result.Read<int>().First();
-                var employees = result.Read<T>().ToList();
-                int? totalPage = request.PageSize != null ? Convert.ToInt32(Math.Ceiling(totalRecord / (decimal)request.PageSize)) : null;
-                paging.Data = employees;
-                if (employees.ToArray().Length == 0)
-                {
-                    paging.TotalRecord = 0;
-                    paging.TotalPage = 0;
-                }
-                else
-                {
-                    paging.TotalRecord = totalRecord;
-                    paging.TotalPage = totalPage;
-                }
-                return paging;
-            }
-        }
-
-        /// <summary>
         /// Xóa 1 bản ghi theo id
         /// </summary>
         /// <param name="id">ID bản ghi cần xóa</param>
@@ -133,7 +98,7 @@ namespace MISA.PROCESS.DL
             parameters.Add($"@{typeof(T).Name}", entities.Value);
             if (detailEntities != null)
             {
-                parameters.Add($"@{detailEntities.Name}s", detailEntities.Value);
+                parameters.Add($"@{detailEntities.Name}", detailEntities.Value);
             }
             using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
             {
@@ -176,7 +141,6 @@ namespace MISA.PROCESS.DL
                 }
             }
         }
-
 
         /// <summary>
         /// Cập nhật bản ghi theo id
@@ -258,7 +222,7 @@ namespace MISA.PROCESS.DL
         }
 
         /// <summary>
-        /// Kiểm tra mã TRÙNG
+        /// Kiểm tra trường TRÙNG
         /// </summary>
         /// <param name="request"></param>
         /// <returns>Kết quả kiểm tra</returns>
