@@ -87,7 +87,6 @@ namespace MISA.PROCESS.Common.Entities
         /// <summary>
         /// Tên các vai trò
         /// </summary>
-        [SqlIgnore]
         public string? RoleNames { get; set; }
 
         /// <summary>
