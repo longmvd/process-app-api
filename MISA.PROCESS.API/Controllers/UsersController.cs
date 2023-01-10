@@ -16,13 +16,18 @@ namespace MISA.PROCESS.API.Controllers
         #endregion
 
         #region Constructor
-
         public UsersController(IUserBL userBL) : base(userBL)
         {
             _userBL = userBL;
         }
-
         #endregion
+
+        #region Method
+        /// <summary>
+        /// Lấy user theo filter
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("filter")]
         public IActionResult GetByFilter([FromBody] PagingRequest request)
         {
@@ -34,7 +39,8 @@ namespace MISA.PROCESS.API.Controllers
                     return StatusCode((int)response.StatusCode, response.Data);
                 }
                 return BadRequest(response.Data);
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult
@@ -47,6 +53,7 @@ namespace MISA.PROCESS.API.Controllers
                 });
             }
         }
-        
+        #endregion
+
     }
 }

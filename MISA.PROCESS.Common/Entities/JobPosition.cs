@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MISA.PROCESS.Common.Attributes;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace MISA.PROCESS.Common.Entities
         /// Tên vị trí
         /// </summary>
         [Required(ErrorMessage = "Tên Không để trống")]
+        [Unique]
         public string JobPositionName { get; set; }
 
         /// <summary>
