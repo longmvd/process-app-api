@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace MISA.PROCESS.Common.DTO
 {
     public class PagingRequest
-    {       
+    {
 
         /// <summary>
         /// Kích thước trang
@@ -49,5 +49,23 @@ namespace MISA.PROCESS.Common.DTO
         /// Thứ tự sắp xếp
         /// </summary>
         public bool Desc { get; set; }
+
+        /// <summary>
+        /// Thứ tự sắp xếp và phân trang
+        /// </summary>
+        public string? OrderLimit
+        {
+            get
+            {
+                string order = this.Desc ? "DESC" : "ASC";
+                string orderLimit = $"{this.SortColumn} {order} LIMIT {this.PageNumber},{this.PageSize}";
+                return orderLimit;
+            }
+        }
+
+        /// <summary>
+        /// Điều kiện lọc
+        /// </summary>
+        public List<ConditionQuery>? ConditionQueries { get; set; }
     }
 }

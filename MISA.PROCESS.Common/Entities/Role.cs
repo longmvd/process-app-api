@@ -20,7 +20,7 @@ namespace MISA.PROCESS.Common.Entities
         /// <summary>
         /// Tên vai trò
         /// </summary>
-        [Required]
+        [Required(ErrorMessage = "Tên vai trò Không để trống")]
         [Unique]
         public string RoleName { get; set; }
 

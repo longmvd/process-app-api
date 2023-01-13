@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using MISA.PROCESS.Common.Constants;
 using MISA.PROCESS.Common.DTO;
+using MISA.PROCESS.Common.Entities;
 using MySqlConnector;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,42 @@ namespace MISA.PROCESS.DL
                 var result = mySqlConnection.Query<T>(storedProcedure, commandType: CommandType.StoredProcedure);
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Lấy bản ghi theo filter
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public virtual PagingResult<T> GetByFilter(PagingRequest request)
+        {
+            var paging = new PagingResult<T>();
+            string storedProcedure = String.Format(Procedure.GET_BY_FILTER, typeof(T).Name);
+            var jobPositionIDs = request.JobPositionIDs != null ? String.Join(",", request.JobPositionIDs) : null;
+            var parameter = new DynamicParameters();
+            parameter.Add("@Where", request.Filter);
+            parameter.Add("@OrderLimit", request.OrderLimit);
+
+            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
+            {
+                var resultQuery = mySqlConnection.QueryMultiple(storedProcedure, parameter, commandType: CommandType.StoredProcedure);
+                var totalRecord = resultQuery.Read<int>().First();
+                var records = resultQuery.Read<T>().ToList();
+                int? totalPage = request.PageSize != null ? Convert.ToInt32(Math.Ceiling(totalRecord / (decimal)request.PageSize)) : null;
+                paging.Data = records;
+                if (records.ToArray().Length == 0)
+                {
+                    paging.TotalRecord = 0;
+                    paging.TotalPage = 0;
+                }
+                else
+                {
+                    paging.TotalRecord = totalRecord;
+                    paging.TotalPage = totalPage;
+                }
+                return paging;
+            }
+
         }
 
         /// <summary>

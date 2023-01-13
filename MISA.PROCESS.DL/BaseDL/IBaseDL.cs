@@ -1,5 +1,6 @@
 ﻿using MISA.PROCESS.Common;
 using MISA.PROCESS.Common.DTO;
+using MISA.PROCESS.Common.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,13 @@ namespace MISA.PROCESS.DL
         /// <returns>Danh sách tất cả bản ghi</returns>
         /// Created by: MDLONG(11/11/2022)
         public IEnumerable<T> GetAll();
+
+        /// <summary>
+        /// Lấy bản ghi theo filter
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public PagingResult<T> GetByFilter(PagingRequest request);
 
         /// <summary>
         /// Lấy bản ghi theo id

@@ -51,6 +51,32 @@ namespace MISA.PROCESS.API.Controllers
             }
         }
 
+        [HttpPost("{filter}")]
+        public IActionResult GetByFilter(PagingRequest request)
+        {
+            try
+            {
+                var response = this._baseBL.GetByFilter(request);
+                if (response.Success)
+                {
+                    return StatusCode((int)response.StatusCode, response.Data);
+                }
+                return BadRequest(response.Data);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult
+                {
+                    ErrorCode = ErrorCode.Exception,
+                    DevMsg = Resource.DevMsg_Exception,
+                    UserMsg = Resource.UserMsg_Exception,
+                    MoreInfo = Resource.DevMsg_Exception,
+                    TraceId = HttpContext.TraceIdentifier
+                });
+            }
+        }
+
         /// <summary>
         /// Lấy thông tin 1 bản ghi theo id
         /// </summary>

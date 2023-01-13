@@ -59,5 +59,12 @@ namespace MISA.PROCESS.BL
         /// <param name="entity"></param>
         /// <returns>Kết quả kiểm tra</returns>
         public ServiceResponse CheckDupplicatedCode(T entity);
+
+        /// <summary>
+        /// validate request gửi lên
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="validatePage"></param>
+        public void ValidateRequest(PagingRequest request, bool validatePage = true);
     }
 }
