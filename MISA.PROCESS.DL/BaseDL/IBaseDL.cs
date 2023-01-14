@@ -38,7 +38,7 @@ namespace MISA.PROCESS.DL
         /// </summary>
         /// <returns>Id bản ghi</returns>
         /// Created by: MDLONG(11/11/2022)
-        public int Insert(StringObject entities, StringObject? detailEntities);
+        public int Insert(StringObject entities, List<StringObject>? detailEntities);
 
         /// <summary>
         /// Cập nhật bản ghi theo id

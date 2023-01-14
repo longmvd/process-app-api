@@ -160,7 +160,7 @@ namespace MISA.PROCESS.Common {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Nhập sai trường thông tin..
+        ///   Looks up a localized string similar to Thông tin không hợp lệ..
         /// </summary>
         public static string UserMsg_Invalid_Data {
             get {

@@ -16,6 +16,38 @@ namespace MISA.PROCESS.DL
 {
     public class BaseDL<T> : IBaseDL<T>
     {
+
+        protected IDbConnection? mySqlConnection = null;
+
+        /// <summary>
+        /// Khởi tạo connection tới database
+        /// </summary>
+        /// <returns>New DB connection</returns>
+        public IDbConnection CreateDBConnection()
+        {
+            return new MySqlConnection(DatabaseContext.ConnectionString);
+        }
+
+        /// <summary>
+        /// Khởi tạo và mở connection tới database
+        /// </summary>
+        public void OpenDB()
+        {
+            mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString);
+            mySqlConnection.Open();
+        }
+
+        /// <summary>
+        /// Đóng connection tới database
+        /// </summary>
+        public void CloseDB()
+        {
+            if (mySqlConnection != null)
+            {
+                mySqlConnection.Close();
+            }
+        }
+
         /// <summary>
         /// Lấy tất cả bản ghi
         /// </summary>
@@ -78,12 +110,10 @@ namespace MISA.PROCESS.DL
             string storedProcedure = String.Format(Procedure.GET_BY_ID, typeof(T).Name);
             var parameters = new DynamicParameters();
             parameters.Add($"@{typeof(T).Name}ID", id);
-
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
-            {
-                var result = mySqlConnection.QueryFirstOrDefault<T>(storedProcedure, parameters, commandType: CommandType.StoredProcedure);
-                return result;
-            }
+            OpenDB();
+            var result = mySqlConnection.QueryFirstOrDefault<T>(storedProcedure, parameters, commandType: CommandType.StoredProcedure);
+            CloseDB();
+            return result;
         }
 
         /// <summary>
@@ -128,14 +158,17 @@ namespace MISA.PROCESS.DL
         /// <param name="entity">Đối tượng thêm mới</param>
         /// <returns>Id bản ghi mới</returns>
         ///  Created by: MDLONG(13/11/2022)
-        public virtual int Insert(StringObject entities, StringObject? detailEntities)
+        public virtual int Insert(StringObject entities, List<StringObject>? detailEntities)
         {
             string storedProcedureName = String.Format(Procedure.INSERT, typeof(T).Name);
             var parameters = new DynamicParameters();
             parameters.Add($"@{typeof(T).Name}", entities.Value);
             if (detailEntities != null)
             {
-                parameters.Add($"@{detailEntities.Name}", detailEntities.Value);
+                foreach (var entity in detailEntities)
+                {
+                    parameters.Add($"@{entity.Name}", entity.Value);
+                }
             }
             using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
             {
@@ -146,15 +179,31 @@ namespace MISA.PROCESS.DL
                     {
                         using (var result = mySqlConnection.QueryMultiple(storedProcedureName, parameters, transaction, commandType: System.Data.CommandType.StoredProcedure))
                         {
-                            int RowEntitiesEffect = result.Read<int>().Single();
+                            int RowEntitiesEffect = result.Read<int>().First();
                             if (detailEntities != null)//nếu có bảng join n-n thì đọc số cột insert vào
                             {
-                                int RowDetailsEffect = result.Read<int>().Single();
-                                if (RowEntitiesEffect != entities.Count || RowDetailsEffect != detailEntities.Count)
+                                var isNext = false;
+                                int index = 0;
+                                do
                                 {
-                                    transaction.Rollback();
-                                    return 0;
+                                    var RowDetailsEffect = result.Read<int>().Single();
+                                    if (RowDetailsEffect != detailEntities[index].Count) // Số lượng insert thành công khác số lượng cần insert
+                                    {
+                                        transaction.Rollback();
+                                    }
+                                    index++;
+                                    isNext = result.IsConsumed;
                                 }
+                                while (!isNext);
+                                //do
+                                //{
+                                //}while(result.)
+                                //if (RowEntitiesEffect != entities.Count || RowDetailsEffect != detailEntities.Count)
+                                //{
+                                //    transaction.Rollback();
+                                //    return 0;
+                                //}
+                                //transaction.Rollback();
                             }
                             else
                             {

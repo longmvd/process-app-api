@@ -92,12 +92,16 @@ namespace MISA.PROCESS.Common.Entities
         /// <summary>
         /// Trạng thái
         /// </summary>
-        /// 
         [Required]
         public Status Status { get; set; }
 
-        [SqlIgnore]
-        public List<object> ModelDetailConfig { get; set; } 
+        //[SqlIgnore]
+        //[ManyToMany]
+        //public List<Guid>? DepartmentIDs { get; set; }
+
+        //[SqlIgnore]
+        //[ManyToMany]
+        //public List<Guid>? JobPositionIDs { get; set; }
 
     }
 }

@@ -62,7 +62,7 @@ namespace MISA.PROCESS.BL
                     whereCondition = $"({String.Join(" ", condition.SubQuery.Select(subQuery => $"{subQuery.Relationship} {subQuery.Column} {subQuery.Operator} {subQuery.Value}"))})";
                     afterWhere.Append($"{condition.Relationship} {whereCondition}");
                 }
-                else if(IsValidCondition(condition))
+                else if (IsValidCondition(condition))
                 {
                     StandardizeValue(condition);
 
@@ -92,7 +92,7 @@ namespace MISA.PROCESS.BL
         /// <param name="condition"></param>
         public static void StandardizeValue(ConditionQuery condition)
         {
-            if(condition.Value != null)
+            if (condition.Value != null)
             {
                 condition.Value = SanitizeInput(condition.Value);
             }
@@ -195,13 +195,17 @@ namespace MISA.PROCESS.BL
             {
                 return response;
             }
+
+
+            var detailObjects = new Dictionary<string, StringObject>(); //table name, values, tổng số bản ghi trong bảng cần insert
             var detailIDs = new List<object>();
             var values = ""; // chuỗi giá trị để lưu vào database của entity
-            string manyToManyName = null;
+
             entities.ForEach((entity) =>
             {
                 var properties = entity.GetType().GetProperties();
                 var value = "(";
+                var entityID = Guid.NewGuid();
                 foreach (PropertyInfo property in properties)
                 {
                     var propName = property.Name;
@@ -213,7 +217,7 @@ namespace MISA.PROCESS.BL
                     {
                         if (propName.Equals($"{typeof(T).Name}ID"))
                         {
-                            propValue = SetValue(entity, property, Guid.NewGuid());
+                            propValue = SetValue(entity, property, entityID);
                         }
 
                         if (propName.Equals("ModifiedDate") || propName.Equals("ModifiedBy"))
@@ -231,10 +235,22 @@ namespace MISA.PROCESS.BL
                     else
                     {
                         //nếu có bảng nhiều nhiều thì thêm id bảng đó vào để lưu sau khi lưu bảng chính
-                        if (manyToMany != null)
+                        if (manyToMany != null && propValue != null)
                         {
-                            detailIDs.Add(propValue);
-                            manyToManyName = propName;
+                            var detailListValue = (List<Guid>)propValue;// lấy danh sách id bảng detail
+                            // chuyển sang dạng chuỗi để insert vào db dạng VALUES ('masterId', 'detailId'),('masterId', 'detailId'),...
+                            var detailStringValue = String.Join(",", detailListValue.Select((detail) => $"('{entityID}','{detail}')"));
+                            if (detailObjects.ContainsKey(propName))
+                            {
+                                var valueObject = detailObjects[propName];
+                                valueObject.Count += detailListValue.Count;
+                                valueObject.Value += $",{detailStringValue}";
+                            }
+                            else
+                            {
+                                var valueObject = new StringObject() { Name = propName, Count = detailListValue.Count, Value = detailStringValue };
+                                detailObjects.Add(valueObject.Name, valueObject);
+                            }
                         }
                     }
                 }
@@ -246,9 +262,11 @@ namespace MISA.PROCESS.BL
             values = values.Remove(values.Length - 1);
             var ens = new StringObject() { Count = entities.Count, Value = values, Name = typeof(T).Name };
 
-            if (manyToManyName != null)
+            if (detailObjects.Count > 0) // xử lý lưu các bảng detail
             {
-                HandleEntitiesForInsertDetail(entities, response, detailIDs, manyToManyName, ens);
+                //lấy ra danh sách các giá trị của các bảng detail cần insert vào db
+                var detailsStringObject = detailObjects.ToList().Select((detailObject)=> detailObject.Value).ToList();
+                response.Data = this._baseDL.Insert(ens, detailsStringObject);
             }
             else
             {
@@ -272,34 +290,6 @@ namespace MISA.PROCESS.BL
             return response;
         }
 
-        private void HandleEntitiesForInsertDetail(List<T> entities, ServiceResponse response, List<object> detailIDs, string manyToManyName, StringObject ens)
-        {
-            var details = new StringObject() { };
-            var detailsValue = "";
-            int numberOfRole = 0;
-            //ghép giá trị id thực thể chính với id thực thể còn lại 
-            for (int i = 0; i < entities.Count; i++)
-            {
-                var masterID = entities[i].GetType().GetProperty($"{typeof(T).Name}ID").GetValue(entities[i]);
-                var listDetailID = (List<Guid>)detailIDs[i];
-                detailsValue += String.Join(",", listDetailID.Select((id) =>
-                {
-                    numberOfRole++;
-                    return $"('{masterID}','{id}')";
-                }).ToList());
-                if (i < entities.Count - 1)
-                {
-                    detailsValue += ",";
-                }
-
-            }
-
-            details.Count = numberOfRole;
-            details.Value = detailsValue;
-            details.Name = manyToManyName;
-
-            response.Data = this._baseDL.Insert(ens, details);
-        }
 
         /// <summary>
         /// Cập nhật bản ghi
@@ -448,15 +438,15 @@ namespace MISA.PROCESS.BL
                     var unique = property.GetCustomAttribute<UniqueAttribute>();
                     var propName = property.Name;
                     var propValue = property.GetValue(entity);
-                    if(propValue != null)
+                    if (propValue != null)
                     {
                         //nếu giá trị là string thì loại bỏ các ký tự đặc biệt
-                        if(propValue is string)
+                        if (propValue is string)
                         {
                             propValue = SanitizeInput(propValue.ToString());
                             property.SetValue(entity, propValue);
                         }
-                        
+
                         //nếu trường nào là unique thì thêm vào từ điển với key là tên trường của thực thể, value là các giá trị của trường đó
                         // vd: UserCode: 'NV123', NV234
                         if (unique != null)
@@ -476,9 +466,10 @@ namespace MISA.PROCESS.BL
             });
             var errorValue = new Dictionary<string, List<string>>();
 
-            if(validationResults.Count > 0)
+
+            if (validationResults.Count > 0)
             {
-           
+
                 foreach (var result in validationResults)
                 {
                     if (!string.IsNullOrEmpty(result.ErrorMessage))
@@ -487,7 +478,7 @@ namespace MISA.PROCESS.BL
                         string errorMessage = result.ErrorMessage;
                         if (!errorValue.ContainsKey(errorField))
                         {
-                            errorValue.Add(errorField, new List<string>() { errorMessage});  
+                            errorValue.Add(errorField, new List<string>() { errorMessage });
                         }
                     }
                 }
