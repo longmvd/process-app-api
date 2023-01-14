@@ -11,43 +11,12 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace MISA.PROCESS.DL
 {
     public class BaseDL<T> : IBaseDL<T>
     {
-
-        protected IDbConnection? mySqlConnection = null;
-
-        /// <summary>
-        /// Khởi tạo connection tới database
-        /// </summary>
-        /// <returns>New DB connection</returns>
-        public IDbConnection CreateDBConnection()
-        {
-            return new MySqlConnection(DatabaseContext.ConnectionString);
-        }
-
-        /// <summary>
-        /// Khởi tạo và mở connection tới database
-        /// </summary>
-        public void OpenDB()
-        {
-            mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString);
-            mySqlConnection.Open();
-        }
-
-        /// <summary>
-        /// Đóng connection tới database
-        /// </summary>
-        public void CloseDB()
-        {
-            if (mySqlConnection != null)
-            {
-                mySqlConnection.Close();
-            }
-        }
-
         /// <summary>
         /// Lấy tất cả bản ghi
         /// </summary>
@@ -56,11 +25,10 @@ namespace MISA.PROCESS.DL
         public virtual IEnumerable<T> GetAll()
         {
             string storedProcedure = String.Format(Procedure.GET_ALL, typeof(T).Name);
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
-            {
-                var result = mySqlConnection.Query<T>(storedProcedure, commandType: CommandType.StoredProcedure);
-                return result;
-            }
+            OpenDB();
+            var result = mySqlConnection.Query<T>(storedProcedure, commandType: CommandType.StoredProcedure);
+            CloseDB();
+            return result;
         }
 
         /// <summary>
@@ -76,26 +44,26 @@ namespace MISA.PROCESS.DL
             var parameter = new DynamicParameters();
             parameter.Add("@Where", request.Filter);
             parameter.Add("@OrderLimit", request.OrderLimit);
+            OpenDB();
+            var resultQuery = mySqlConnection.QueryMultiple(storedProcedure, parameter, commandType: CommandType.StoredProcedure);
+            var totalRecord = resultQuery.Read<int>().First();
+            var records = resultQuery.Read<T>().ToList();
+            CloseDB();
 
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
+            int? totalPage = request.PageSize != null ? Convert.ToInt32(Math.Ceiling(totalRecord / (decimal)request.PageSize)) : null;
+            paging.Data = records;
+            if (records.ToArray().Length == 0)
             {
-                var resultQuery = mySqlConnection.QueryMultiple(storedProcedure, parameter, commandType: CommandType.StoredProcedure);
-                var totalRecord = resultQuery.Read<int>().First();
-                var records = resultQuery.Read<T>().ToList();
-                int? totalPage = request.PageSize != null ? Convert.ToInt32(Math.Ceiling(totalRecord / (decimal)request.PageSize)) : null;
-                paging.Data = records;
-                if (records.ToArray().Length == 0)
-                {
-                    paging.TotalRecord = 0;
-                    paging.TotalPage = 0;
-                }
-                else
-                {
-                    paging.TotalRecord = totalRecord;
-                    paging.TotalPage = totalPage;
-                }
-                return paging;
+                paging.TotalRecord = 0;
+                paging.TotalPage = 0;
             }
+            else
+            {
+                paging.TotalRecord = totalRecord;
+                paging.TotalPage = totalPage;
+            }
+            return paging;
+
 
         }
 
@@ -127,29 +95,30 @@ namespace MISA.PROCESS.DL
             string storedProcedure = String.Format(Procedure.DELETE_BY_ID, typeof(T).Name);
             var parameters = new DynamicParameters();
             parameters.Add(String.Format("@{0}ID", typeof(T).Name), id);
-
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
+            OpenDB();
+            try
             {
-                mySqlConnection.Open();
-                var transaction = mySqlConnection.BeginTransaction();
-                try
+                var transaction = BeginTransaction();
+                int numberOfRow = mySqlConnection.Query<int>(storedProcedure, parameters, transaction, commandType: CommandType.StoredProcedure).FirstOrDefault();
+                if (numberOfRow == 1)
                 {
-                    int numberOfRow = mySqlConnection.Query<int>(storedProcedure, parameters, transaction, commandType: CommandType.StoredProcedure).FirstOrDefault();
-                    if (numberOfRow == 1)
-                    {
-                        transaction.Commit();
-                        return true;
-                    };
-                    transaction.Rollback();
-                    return false;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    transaction.Rollback();
-                    return false;
-                }
+                    Commit();
+                    return true;
+                };
+                Rollback();
+                return false;
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Rollback();
+                return false;
+            }
+            finally
+            {
+                CloseDB();
+            }
+
         }
 
         /// <summary>
@@ -170,60 +139,46 @@ namespace MISA.PROCESS.DL
                     parameters.Add($"@{entity.Name}", entity.Value);
                 }
             }
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
-            {
-                mySqlConnection.Open();
-                using (var transaction = mySqlConnection.BeginTransaction())
-                {
-                    try
-                    {
-                        using (var result = mySqlConnection.QueryMultiple(storedProcedureName, parameters, transaction, commandType: System.Data.CommandType.StoredProcedure))
-                        {
-                            int RowEntitiesEffect = result.Read<int>().First();
-                            if (detailEntities != null)//nếu có bảng join n-n thì đọc số cột insert vào
-                            {
-                                var isNext = false;
-                                int index = 0;
-                                do
-                                {
-                                    var RowDetailsEffect = result.Read<int>().Single();
-                                    if (RowDetailsEffect != detailEntities[index].Count) // Số lượng insert thành công khác số lượng cần insert
-                                    {
-                                        transaction.Rollback();
-                                    }
-                                    index++;
-                                    isNext = result.IsConsumed;
-                                }
-                                while (!isNext);
-                                //do
-                                //{
-                                //}while(result.)
-                                //if (RowEntitiesEffect != entities.Count || RowDetailsEffect != detailEntities.Count)
-                                //{
-                                //    transaction.Rollback();
-                                //    return 0;
-                                //}
-                                //transaction.Rollback();
-                            }
-                            else
-                            {
-                                if (RowEntitiesEffect != entities.Count)
-                                {
-                                    transaction.Rollback();
-                                    return 0;
-                                }
-                            }
-                            transaction.Commit();
-                            return RowEntitiesEffect;
 
+            OpenDB();
+            using (var transaction = mySqlConnection.BeginTransaction())
+            {
+                using (var result = mySqlConnection.QueryMultiple(storedProcedureName, parameters, transaction, commandType: CommandType.StoredProcedure))
+                {
+                    int RowEntitiesEffect = result.Read<int>().First();
+                    bool isRollback = false;
+                    if (detailEntities != null)//nếu có bảng join n-n thì đọc số cột insert vào
+                    {
+                        var isNext = false;
+                        int index = 0;
+                        do
+                        {
+                            var RowDetailsEffect = result.Read<int>().Single();
+                            if (RowDetailsEffect != detailEntities[index].Count || RowEntitiesEffect != entities.Count) // Số lượng insert thành công khác số lượng cần insert
+                            {
+                                isRollback = true;
+                            }
+                            index++;
+                            isNext = result.IsConsumed;
+                        }
+                        while (!isNext);
+                        if (isRollback)
+                        {
+                            transaction.Rollback();
+                            return 0;
                         }
                     }
-                    catch (Exception e)
+                    else
                     {
-                        Console.WriteLine(e);
-                        transaction.Rollback();
-                        return 0;
+                        if (RowEntitiesEffect != entities.Count)
+                        {
+                            transaction.Rollback();
+                            return 0;
+                        }
                     }
+                    transaction.Commit();
+                    CloseDB();
+                    return RowEntitiesEffect;
                 }
             }
         }
@@ -238,42 +193,56 @@ namespace MISA.PROCESS.DL
         public virtual bool UpdateOneByID(Guid id, T entity)
         {
             string storedProcedureName = String.Format(Procedure.UPDATE, typeof(T).Name);
+            DynamicParameters parameters = SetParameter(id, entity);
 
-            var parameters = new DynamicParameters();
-            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(entity))
+            bool state = true;
+            OpenDB();
+            if (mySqlConnection != null)
             {
-                string property = descriptor.Name;
-                object value = descriptor.GetValue(entity);
-
-                string idField = $"{typeof(T).Name}ID";
-                if (property.Equals(idField))
-                    parameters.Add($"@{property}", id);
-                else
-                    parameters.Add($"@{property}", value);
-            }
-
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
-            {
-                mySqlConnection.Open();
-                var transaction = mySqlConnection.BeginTransaction();
+                using var transaction = mySqlConnection.BeginTransaction();
                 try
                 {
                     int result = mySqlConnection.Execute(storedProcedureName, parameters, transaction, commandType: CommandType.StoredProcedure);
                     transaction.Commit();
-                    return result > 0;
+                    state = result > 0;
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                     transaction.Rollback();
-                    return false;
+                    state = false;
                 }
-                finally
-                {
-                    mySqlConnection.Close();
-                }
-
+                CloseDB();
             }
+            return state;
+
+        }
+
+        /// <summary>
+        /// Đặt parameter cho câu query
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        private static DynamicParameters SetParameter(Guid id, T entity)
+        {
+            var parameters = new DynamicParameters();
+            if (entity != null)
+            {
+                foreach (var property in entity.GetType().GetProperties())
+                {
+                    string propName = property.Name;
+                    object value = property.GetValue(entity);
+
+                    string idField = $"{typeof(T).Name}ID";
+                    if (propName.Equals(idField))
+                        parameters.Add($"@{propName}", id);
+                    else
+                        parameters.Add($"@{propName}", value);
+                }
+            }
+
+            return parameters;
         }
 
         /// <summary>
@@ -286,25 +255,24 @@ namespace MISA.PROCESS.DL
         {
             string storedProcedure = String.Format(Procedure.CHECK_DUPLICATED_CODE, typeof(T).Name);
             var parameters = new DynamicParameters();
-            foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(entity))
+            foreach (var property in entity.GetType().GetProperties())
             {
                 //Lấy tên của prop
-                string property = descriptor.Name;
+                string propName = property.Name;
                 //Nếu prop id
-                string idField = $"{typeof(T).Name}Code";
-                if (property.Equals(idField))
+                string codeField = $"{typeof(T).Name}Code";
+                if (propName.Equals(codeField))
                 {
-                    object value = descriptor.GetValue(entity);
-                    parameters.Add($"@{property}", value);
+                    object value = property.GetValue(entity);
+                    parameters.Add($"@{propName}", value);
                     break;
                 }
             }
 
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
-            {
-                var result = mySqlConnection.QueryFirstOrDefault<Int16>(storedProcedure, parameters, commandType: CommandType.StoredProcedure);
-                return result > 0 ? true : false;
-            }
+            OpenDB();
+            var result = mySqlConnection.QueryFirstOrDefault<int>(storedProcedure, parameters, commandType: CommandType.StoredProcedure);
+            CloseDB();
+            return result > 0 ? true : false;
         }
 
         /// <summary>
@@ -320,10 +288,72 @@ namespace MISA.PROCESS.DL
             parameters.Add($"@Values", values);
             parameters.Add($"@Column", field);
             parameters.Add($"@Table", entityName);
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
+            OpenDB();
+            var result = mySqlConnection.Query<string>(storedProcedure, parameters, commandType: CommandType.StoredProcedure).ToList();
+            CloseDB();
+            return result;
+
+        }
+
+        protected IDbConnection? mySqlConnection = null;
+
+        /// <summary>
+        /// Khởi tạo connection tới database
+        /// </summary>
+        /// <returns>New DB connection</returns>
+        public IDbConnection CreateDBConnection()
+        {
+            return new MySqlConnection(DatabaseContext.ConnectionString);
+        }
+
+        private IDbTransaction? _transaction;
+
+        public IDbTransaction? BeginTransaction()
+        {
+            if (mySqlConnection != null)
             {
-                var result = mySqlConnection.Query<string>(storedProcedure, parameters, commandType: CommandType.StoredProcedure).ToList();
-                return result;
+                _transaction = mySqlConnection.BeginTransaction();
+                return _transaction;
+            }
+            return null;
+        }
+        public void Commit()
+        {
+            if (_transaction != null)
+            {
+                _transaction.Commit();
+                _transaction.Dispose();
+                _transaction = null;
+            }
+        }
+
+        public void Rollback()
+        {
+            if (_transaction != null)
+            {
+                _transaction.Rollback();
+                _transaction.Dispose();
+                _transaction = null;
+            }
+        }
+
+        /// <summary>
+        /// Khởi tạo và mở connection tới database
+        /// </summary>
+        public void OpenDB()
+        {
+            mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString);
+            mySqlConnection.Open();
+        }
+
+        /// <summary>
+        /// Đóng connection tới database
+        /// </summary>
+        public void CloseDB()
+        {
+            if (mySqlConnection != null)
+            {
+                mySqlConnection.Close();
             }
         }
     }

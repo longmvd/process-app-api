@@ -22,12 +22,15 @@ namespace MISA.PROCESS.BL
         #region Field
         private IBaseDL<T> _baseDL;
         #endregion
+
         #region Constructor
         public BaseBL(IBaseDL<T> baseDL)
         {
             _baseDL = baseDL;
         }
         #endregion
+
+        #region Method
         /// <summary>
         /// Lấy tất cả bản ghi
         /// </summary>
@@ -35,7 +38,7 @@ namespace MISA.PROCESS.BL
         /// <exception cref="NotImplementedException"></exception>
         public virtual ServiceResponse GetAll()
         {
-            ServiceResponse response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true };
+            var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true };
             response.Data = this._baseDL.GetAll();
             return response;
         }
@@ -71,17 +74,11 @@ namespace MISA.PROCESS.BL
                 }
             }
 
-            // build câu sắp xếp và phân trang
-            //string order = request.Desc ? "DESC" : "ASC";
-            //string orderLimit = $" ORDER BY {request.SortColumn} {order} LIMIT {request.PageNumber},{request.PageSize}";
-
-
             request.Filter = afterWhere.ToString();
 
             var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true };
             var paging = this._baseDL.GetByFilter(request);
             response.Data = paging;
-
 
             return response;
         }
@@ -265,7 +262,7 @@ namespace MISA.PROCESS.BL
             if (detailObjects.Count > 0) // xử lý lưu các bảng detail
             {
                 //lấy ra danh sách các giá trị của các bảng detail cần insert vào db
-                var detailsStringObject = detailObjects.ToList().Select((detailObject)=> detailObject.Value).ToList();
+                var detailsStringObject = detailObjects.ToList().Select((detailObject) => detailObject.Value).ToList();
                 response.Data = this._baseDL.Insert(ens, detailsStringObject);
             }
             else
@@ -575,7 +572,7 @@ namespace MISA.PROCESS.BL
                 }
                 else if (propValue == "")
                 {
-                    value += "null,";
+                    value += "NULL,";
                 }
                 else
                 {
@@ -585,7 +582,7 @@ namespace MISA.PROCESS.BL
             }
             else
             {
-                value += "null,";
+                value += "NULL,";
             }
             return value;
         }
@@ -603,17 +600,6 @@ namespace MISA.PROCESS.BL
             property.SetValue(entity, value, null);
             propValue = property.GetValue(entity, null);
             return propValue;
-        }
-
-        /// <summary>
-        /// Giải mã chuỗi base64
-        /// </summary>
-        /// <param name="base64EncodedData"></param>
-        /// <returns></returns>
-        public static string Base64Decode(string base64EncodedData)
-        {
-            var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
-            return Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
         /// <summary>
@@ -637,6 +623,7 @@ namespace MISA.PROCESS.BL
         public static bool IsValidCondition(ConditionQuery condition)
         {
             return !(String.IsNullOrEmpty(condition.Operator) || String.IsNullOrEmpty(condition.Relationship) || String.IsNullOrEmpty(condition.Column) || String.IsNullOrEmpty(condition.Value));
-        }
+        } 
+        #endregion
     }
 }

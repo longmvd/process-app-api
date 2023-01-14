@@ -35,8 +35,11 @@ namespace MISA.PROCESS.DL
                 {
                     if (!result.ContainsKey(user.UserID))//nếu user chưa có trong từ điển thì thêm vào
                         result.Add(user.UserID, user);
-                    User working = result[user.UserID];//nếu có thì thêm vai trò cho user đó
-                    working.Roles.Add(role);
+                    var working = result[user.UserID];//nếu có thì thêm vai trò cho user đó
+                    if (working.Roles != null)
+                    {
+                        working.Roles.Add(role);
+                    }
                     return user;
                 },
                 parameters,
@@ -50,14 +53,14 @@ namespace MISA.PROCESS.DL
             }
         }
 
-       /// <summary>
-       /// Cập nhật theo id
-       /// </summary>
-       /// <param name="id">id</param>
-       /// <param name="deleteRole">đối tượng cần xóa</param>
-       /// <param name="insertRole">đối tượng cần thêm</param>
-       /// <param name="modifiedBy">sửa bởi</param>
-       /// <returns></returns>
+        /// <summary>
+        /// Cập nhật theo id
+        /// </summary>
+        /// <param name="id">id</param>
+        /// <param name="deleteRole">đối tượng cần xóa</param>
+        /// <param name="insertRole">đối tượng cần thêm</param>
+        /// <param name="modifiedBy">sửa bởi</param>
+        /// <returns></returns>
         public bool UpdateOneByID(Guid id, StringObject deleteRole, StringObject insertRole, string roleNames, string modifiedBy)
         {
             string storedProcedureName = String.Format(Procedure.UPDATE, typeof(User).Name);
@@ -70,9 +73,10 @@ namespace MISA.PROCESS.DL
             parameters.Add("@ModifiedDate", DateTime.Now);
             parameters.Add("@ModifiedBy", modifiedBy);
 
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
+            var result = true;
+            OpenDB();
+            if (mySqlConnection != null)
             {
-                mySqlConnection.Open();
                 using (var transaction = mySqlConnection.BeginTransaction())
                 {
                     try
@@ -84,21 +88,25 @@ namespace MISA.PROCESS.DL
                         if (roleDeleted != deleteRole.Count || roleInserted != insertRole.Count)
                         {
                             transaction.Rollback();
-                            return false;
+                            result = false;
                         }
-                        transaction.Commit();
-                        return true;
+                        else
+                        {
+                            transaction.Commit();
+                            result = true;
+                        }
                     }
                     catch (Exception e)
                     {
                         Console.WriteLine(e);
                         transaction.Rollback();
-                        return false;
+                        result = false;
                     }
+                    CloseDB();
                 }
-
             }
 
+            return result;
         }
     }
 }

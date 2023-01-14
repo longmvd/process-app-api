@@ -32,15 +32,6 @@ namespace MISA.PROCESS.BL
             _userDL = userBL;
         }
 
-        //public ServiceResponse GetByFilter(PagingRequest request)
-        //{
-        //    ValidateRequest(request);
-
-        //    return _userDL.GetByFilter(request);
-        //}
-
-
-
         /// <summary>
         /// Lấy bản ghi theo id
         /// </summary>
@@ -91,17 +82,6 @@ namespace MISA.PROCESS.BL
             return response;
 
         }
-
-        //public override ServiceResponse GetByFilter(PagingRequest request)
-        //{
-        //    ValidateRequest(request);
-        //    var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true};
-        //    var paging = this._userDL.GetByFilter(request);
-        //    response.Data = paging;
-            
-
-        //    return response;
-        //}
         #endregion
     }
 }

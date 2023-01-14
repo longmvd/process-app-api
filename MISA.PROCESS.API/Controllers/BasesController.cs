@@ -131,7 +131,7 @@ namespace MISA.PROCESS.API.Controllers
             try
             {
                 var response = _baseBL.Insert(entities);
-                if (response.Success)
+                if (response.Success && response.StatusCode !=null)
                 {
                     return StatusCode((int)response.StatusCode, response.Data);
                 }
@@ -186,11 +186,10 @@ namespace MISA.PROCESS.API.Controllers
         [HttpPut("{recordId}")]
         public IActionResult Update([FromRoute] Guid recordId, [FromBody] T entity)
         {
-
             try
             {
                 var response = _baseBL.UpdateOneByID(recordId, entity, ModelState);
-                if (response.Success)
+                if (response.Success && response.StatusCode != null)
                 {
                     return StatusCode((int)response.StatusCode, response.Data);
                 }

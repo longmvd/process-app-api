@@ -40,14 +40,14 @@ namespace MISA.PROCESS.Common.Entities
         /// <summary>
         /// Vị trí
         /// </summary>
-        [Required]
-        public Guid JobPositionID { get; set; }
+        //[Required]
+        //public Guid JobPositionID { get; set; }
 
-        /// <summary>
-        /// Phòng ban
-        /// </summary>
-        [Required]
-        public Guid DepartmentID { get; set; }
+        ///// <summary>
+        ///// Phòng ban
+        ///// </summary>
+        //[Required]
+        //public Guid DepartmentID { get; set; }
 
         /// <summary>
         /// Tên phòng ban
@@ -95,13 +95,13 @@ namespace MISA.PROCESS.Common.Entities
         [Required]
         public Status Status { get; set; }
 
-        //[SqlIgnore]
-        //[ManyToMany]
-        //public List<Guid>? DepartmentIDs { get; set; }
+        [SqlIgnore]
+        [ManyToMany]
+        public List<Guid>? DepartmentIDs { get; set; }
 
-        //[SqlIgnore]
-        //[ManyToMany]
-        //public List<Guid>? JobPositionIDs { get; set; }
+        [SqlIgnore]
+        [ManyToMany]
+        public List<Guid>? JobPositionIDs { get; set; }
 
     }
 }
