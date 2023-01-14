@@ -96,28 +96,22 @@ namespace MISA.PROCESS.DL
             var parameters = new DynamicParameters();
             parameters.Add(String.Format("@{0}ID", typeof(T).Name), id);
             OpenDB();
-            try
+            if (mySqlConnection != null)
             {
-                var transaction = BeginTransaction();
-                int numberOfRow = mySqlConnection.Query<int>(storedProcedure, parameters, transaction, commandType: CommandType.StoredProcedure).FirstOrDefault();
-                if (numberOfRow == 1)
+                using (var transaction = mySqlConnection.BeginTransaction())
                 {
-                    Commit();
+                    int numberOfRow = mySqlConnection.Query<int>(storedProcedure, parameters, transaction, commandType: CommandType.StoredProcedure).FirstOrDefault();
+                    if (numberOfRow != 1)
+                    {
+                        transaction.Rollback();
+                        return false;
+                    }
+                    transaction.Commit();
+                    CloseDB();
                     return true;
-                };
-                Rollback();
-                return false;
+                }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                Rollback();
-                return false;
-            }
-            finally
-            {
-                CloseDB();
-            }
+            return false;
 
         }
 
@@ -295,47 +289,7 @@ namespace MISA.PROCESS.DL
 
         }
 
-        protected IDbConnection? mySqlConnection = null;
-
-        /// <summary>
-        /// Khởi tạo connection tới database
-        /// </summary>
-        /// <returns>New DB connection</returns>
-        public IDbConnection CreateDBConnection()
-        {
-            return new MySqlConnection(DatabaseContext.ConnectionString);
-        }
-
-        private IDbTransaction? _transaction;
-
-        public IDbTransaction? BeginTransaction()
-        {
-            if (mySqlConnection != null)
-            {
-                _transaction = mySqlConnection.BeginTransaction();
-                return _transaction;
-            }
-            return null;
-        }
-        public void Commit()
-        {
-            if (_transaction != null)
-            {
-                _transaction.Commit();
-                _transaction.Dispose();
-                _transaction = null;
-            }
-        }
-
-        public void Rollback()
-        {
-            if (_transaction != null)
-            {
-                _transaction.Rollback();
-                _transaction.Dispose();
-                _transaction = null;
-            }
-        }
+        protected IDbConnection? mySqlConnection;
 
         /// <summary>
         /// Khởi tạo và mở connection tới database
