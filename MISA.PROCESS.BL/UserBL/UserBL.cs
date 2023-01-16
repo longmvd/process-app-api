@@ -39,7 +39,7 @@ namespace MISA.PROCESS.BL
         /// <param name="entity"></param>
         /// <param name="modelStateDictionary"></param>
         /// <returns></returns>
-        public override ServiceResponse UpdateOneByID(Guid id, User entity, ModelStateDictionary modelStateDictionary)
+        public override ServiceResponse UpdateOneByID(Guid id, User entity)
         {
             ServiceResponse response = new ServiceResponse() { Success = true, StatusCode = System.Net.HttpStatusCode.OK };
             var errorObject = new ExpandoObject() as IDictionary<string, object>;

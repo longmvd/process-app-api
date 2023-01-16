@@ -40,7 +40,6 @@ namespace MISA.PROCESS.DL
         {
             var paging = new PagingResult<T>();
             string storedProcedure = String.Format(Procedure.GET_BY_FILTER, typeof(T).Name);
-            var jobPositionIDs = request.JobPositionIDs != null ? String.Join(",", request.JobPositionIDs) : null;
             var parameter = new DynamicParameters();
             parameter.Add("@Where", request.Filter);
             parameter.Add("@OrderLimit", request.OrderLimit);
@@ -94,7 +93,7 @@ namespace MISA.PROCESS.DL
         {
             string storedProcedure = String.Format(Procedure.DELETE_BY_ID, typeof(T).Name);
             var parameters = new DynamicParameters();
-            parameters.Add(String.Format("@{0}ID", typeof(T).Name), id);
+            parameters.Add($"@{typeof(T).Name}ID", id);
             OpenDB();
             if (mySqlConnection != null)
             {
@@ -289,6 +288,22 @@ namespace MISA.PROCESS.DL
 
         }
 
+        /// <summary>
+        /// Lấy mã mới
+        /// </summary>
+        /// <returns></returns>
+        public int GetNewCode()
+        {
+            string storedProcedure = String.Format(Procedure.GET_MAX_CODE, typeof(T).Name);
+            OpenDB();
+            var result = mySqlConnection.QueryFirstOrDefault<int>(storedProcedure, commandType: CommandType.StoredProcedure);
+            CloseDB();
+            return result;
+        }
+
+        /// <summary>
+        /// Kết nối database
+        /// </summary>
         protected IDbConnection? mySqlConnection;
 
         /// <summary>

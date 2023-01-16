@@ -52,61 +52,60 @@ namespace MISA.PROCESS.BL
         /// Created by: MDLONG(23/12/2022)
         public virtual ServiceResponse GetByFilter(PagingRequest request)
         {
-            ValidateRequest(request);
-
+            var response = ValidateRequest(request);
             var conditions = request.ConditionQueries;
-            StringBuilder afterWhere = new StringBuilder();
-            foreach (var condition in conditions)
+            if (response.Success && conditions != null)
             {
-                string whereCondition;
-                if (condition.SubQuery != null)
+                StringBuilder afterWhere = new StringBuilder();
+                foreach (var condition in conditions)
                 {
-                    condition.SubQuery.ForEach(query => StandardizeValue(query));
-                    whereCondition = $"({String.Join(" ", condition.SubQuery.Select(subQuery => $"{subQuery.Relationship} {subQuery.Column} {subQuery.Operator} {subQuery.Value}"))})";
-                    afterWhere.Append($"{condition.Relationship} {whereCondition}");
-                }
-                else if (IsValidCondition(condition))
-                {
-                    StandardizeValue(condition);
+                    string whereCondition;
+                    if (condition.SubQuery != null)
+                    {
+                        //chuẩn hóa giá trị
+                        condition.SubQuery.ForEach(query => StandardizeValue(query));
 
-                    whereCondition = $" {condition.Relationship} {condition.Column} {condition.Operator} {condition.Value}";
-                    afterWhere.Append(whereCondition);
+                        //lấy các câu query con
+                        var conditionSubQuery = condition.SubQuery.Select((subQuery, index) =>
+                                                        (index == 0 ? IsFirstConditionValid(subQuery) : IsValidCondition(subQuery))
+                                                        ? $"{subQuery.Relationship} {subQuery.Column} {subQuery.Operator} {subQuery.Value}" : "").ToList();
+                        bool isValidSubQuery = false;
+                        //nếu duyệt qua các câu query con đều rỗng thì không thêm vào where
+                        for (int i = 0; i < conditionSubQuery.Count; i++)
+                        {
+                            //bỏ quan hệ đầu tiên để đúng cú pháp vd: (AND column LIKE ...) cần bỏ AND
+                            if (!string.IsNullOrEmpty(conditionSubQuery[i]))
+                            {
+                                var splitCondition = conditionSubQuery[i].Split(" ");
+                                splitCondition[0] = "";
+                                conditionSubQuery[i] = String.Join(" ", splitCondition);
+                                isValidSubQuery = true;
+                                break;
+                            }
+                        };
+                        //nếu query con hợp lệ thì mới thêm vào
+                        if (isValidSubQuery)
+                        {
+                            whereCondition = $"({String.Join(" ", conditionSubQuery)})";
+                            afterWhere.Append($"{condition.Relationship} {whereCondition}");
+                        }
+                    }
+                    else if (IsValidCondition(condition))
+                    {
+                        StandardizeValue(condition);
+
+                        whereCondition = $" {condition.Relationship} {condition.Column} {condition.Operator} {condition.Value}";
+                        afterWhere.Append(whereCondition);
+                    }
                 }
+
+                request.Filter = afterWhere.ToString();
+
+                var paging = this._baseDL.GetByFilter(request);
+                response.Data = paging;
             }
-
-            request.Filter = afterWhere.ToString();
-
-            var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true };
-            var paging = this._baseDL.GetByFilter(request);
-            response.Data = paging;
 
             return response;
-        }
-
-        /// <summary>
-        /// Chuẩn hóa giá trị cho câu điều kiện where
-        /// </summary>
-        /// <param name="condition"></param>
-        public static void StandardizeValue(ConditionQuery condition)
-        {
-            if (condition.Value != null)
-            {
-                condition.Value = SanitizeInput(condition.Value);
-            }
-            switch (condition.Operator)
-            {
-                case "LIKE":
-                    condition.Value = $"'%{condition.Value}%'";
-                    break;
-                case "IN":
-                    //nếu là IN thì chuyển value về dạng ('abc','cde',...)
-                    var values = $"({String.Join(",", condition.Value.Split(",").ToList().Select(value => $"'{value}'"))})";
-                    condition.Value = values;
-                    break;
-                default:
-                    condition.Value = $"'{condition.Value}'";
-                    break;
-            }
         }
 
         /// <summary>
@@ -170,7 +169,7 @@ namespace MISA.PROCESS.BL
             }
             else
             {
-                response.ErrorCode = Common.Enums.ErrorCode.InvalidData;
+                response.ErrorCode = ErrorCode.InvalidData;
                 response.Data = false;
             }
             return response;
@@ -187,17 +186,82 @@ namespace MISA.PROCESS.BL
         public virtual ServiceResponse Insert(List<T> entities)
         {
 
+            //BeforeSave();
             var response = ValidateData(entities);
             if (!response.Success)
             {
                 return response;
             }
 
+            response.Data = DoSave(entities);
 
+            if ((int)response.Data > 0)
+            {
+                response.Success = true;
+                response.StatusCode = System.Net.HttpStatusCode.Created;
+            }
+            else
+            {
+                var error = new Dictionary<string, List<string>>();
+                error.Add($"{entities.GetType().Name}", new List<string>() { Resource.UserMsg_Add_Failed });
+                response.Data = error;
+                response.Success = false;
+                response.StatusCode = System.Net.HttpStatusCode.BadRequest;
+                response.ErrorCode = ErrorCode.Failed;
+            }
+            return response;
+        }
+
+        /// <summary>
+        /// Thực hiện xử lý trước khi lưu
+        /// </summary>
+        /// <param name="entities"></param>
+        public virtual void BeforeSave(List<T> entities)
+        {
+            //
+        }
+
+        /// <summary>
+        /// Lưu các thực thể
+        /// </summary>
+        /// <param name="entities"></param>
+        /// <returns></returns>
+        public virtual int DoSave(List<T> entities)
+        {
             var detailObjects = new Dictionary<string, StringObject>(); //table name, values, tổng số bản ghi trong bảng cần insert
-            var detailIDs = new List<object>();
-            var values = ""; // chuỗi giá trị để lưu vào database của entity
+            // xử lý thực thể trước khi lưu
+            StringObject ens = HandleEntityValueToSave(entities, detailObjects);
 
+            if (detailObjects.Count > 0) // xử lý lưu các bảng detail
+            {
+                //lấy ra danh sách các giá trị của các bảng detail cần insert vào db
+                var detailStringObject = detailObjects.ToList().Select((detailObject) => detailObject.Value).ToList();
+                return this._baseDL.Insert(ens, detailStringObject);
+            }
+            else
+            {
+                return this._baseDL.Insert(ens, null);
+            }
+        }
+
+        /// <summary>
+        /// Xử lý sau lưu
+        /// </summary>
+        /// <returns></returns>
+        public virtual void AfterSave()
+        {
+
+        }
+
+        /// <summary>
+        /// Xử lý dữ liệu thực thể để lưu
+        /// </summary>
+        /// <param name="entities"></param>
+        /// <param name="detailObjects"></param>
+        /// <returns></returns>
+        private static StringObject HandleEntityValueToSave(List<T> entities, Dictionary<string, StringObject> detailObjects)
+        {
+            var values = ""; // chuỗi giá trị để lưu vào database của entity
             entities.ForEach((entity) =>
             {
                 var properties = entity.GetType().GetProperties();
@@ -232,22 +296,9 @@ namespace MISA.PROCESS.BL
                     else
                     {
                         //nếu có bảng nhiều nhiều thì thêm id bảng đó vào để lưu sau khi lưu bảng chính
-                        if (manyToMany != null && propValue != null)
+                        if (manyToMany != null)
                         {
-                            var detailListValue = (List<Guid>)propValue;// lấy danh sách id bảng detail
-                            // chuyển sang dạng chuỗi để insert vào db dạng VALUES ('masterId', 'detailId'),('masterId', 'detailId'),...
-                            var detailStringValue = String.Join(",", detailListValue.Select((detail) => $"('{entityID}','{detail}')"));
-                            if (detailObjects.ContainsKey(propName))
-                            {
-                                var valueObject = detailObjects[propName];
-                                valueObject.Count += detailListValue.Count;
-                                valueObject.Value += $",{detailStringValue}";
-                            }
-                            else
-                            {
-                                var valueObject = new StringObject() { Name = propName, Count = detailListValue.Count, Value = detailStringValue };
-                                detailObjects.Add(valueObject.Name, valueObject);
-                            }
+                            HandleDetailValueToSave(detailObjects, entityID, propName, propValue);
                         }
                     }
                 }
@@ -258,35 +309,8 @@ namespace MISA.PROCESS.BL
             //bỏ dấu phẩy cuối bị thừa
             values = values.Remove(values.Length - 1);
             var ens = new StringObject() { Count = entities.Count, Value = values, Name = typeof(T).Name };
-
-            if (detailObjects.Count > 0) // xử lý lưu các bảng detail
-            {
-                //lấy ra danh sách các giá trị của các bảng detail cần insert vào db
-                var detailsStringObject = detailObjects.ToList().Select((detailObject) => detailObject.Value).ToList();
-                response.Data = this._baseDL.Insert(ens, detailsStringObject);
-            }
-            else
-            {
-                response.Data = this._baseDL.Insert(ens, null);
-            }
-
-            if (response.Data != null && (int)response.Data > 0)
-            {
-                response.Success = true;
-                response.StatusCode = System.Net.HttpStatusCode.Created;
-            }
-            else
-            {
-                Dictionary<string, List<string>> error = new Dictionary<string, List<string>>();
-                error.Add($"{entities.GetType().Name}", new List<string>() { Resource.UserMsg_Add_Failed });
-                response.Data = error;
-                response.Success = false;
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.ErrorCode = ErrorCode.Failed;
-            }
-            return response;
+            return ens;
         }
-
 
         /// <summary>
         /// Cập nhật bản ghi
@@ -297,9 +321,9 @@ namespace MISA.PROCESS.BL
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         /// Created by: MDLONG(23/12/2022)
-        public virtual ServiceResponse UpdateOneByID(Guid id, T entity, ModelStateDictionary modelStateDictionary)
+        public virtual ServiceResponse UpdateOneByID(Guid id, T entity)
         {
-            ServiceResponse respone = ValidateData(entity, modelStateDictionary);
+            ServiceResponse respone = ValidateData(entity);
             T oldEntity = this._baseDL.GetByID(id);
             //nếu mã trùng nhưng là mã của chính nó thì vẫn đúng
             if (respone.ErrorCode == ErrorCode.Duplicated)
@@ -327,87 +351,60 @@ namespace MISA.PROCESS.BL
         /// <param name="entity"></param>
         /// <param name="modelStateDictionary"></param>
         /// <returns></returns>
-        public ServiceResponse ValidateData(T entity, ModelStateDictionary modelStateDictionary)
+        public virtual ServiceResponse ValidateData(T entity)
         {
             var response = new ServiceResponse() { Success = true, StatusCode = System.Net.HttpStatusCode.OK };
             var properties = typeof(T).GetProperties();
 
             //custom lỗi binding dữ liệu
             var errorObject = new ExpandoObject() as IDictionary<string, object>;
-            bool isValidObject = true;
             bool isValidCode = true;
-            foreach (var modelState in modelStateDictionary)
-            {
-                // lấy ra danh sách lỗi
-                var errors = modelState.Value.Errors.Select(error => error.ErrorMessage).ToList();
-                if (errors.Count > 0)
-                {
-                    //nếu có lỗi thì gán property có lỗi tương ứng với dánh sách lỗi
-                    var key = modelState.Key;
-                    if (key.Contains("$"))
-                    {
-                        //nếu dữ liệu gửi lên sai thì tất cả đều sai
-                        isValidObject = false;
-                        isValidCode = false;
-                    }
-                    if (key.Contains("Code"))
-                    {
-                        isValidCode = false;
-                    }
 
-                    errorObject.Add(key, errors);
-                }
-            }
+            var validationResults = new List<ValidationResult>();
+            //validate giá trị đầu vào
+            var context = new ValidationContext(entity);
+            Validator.TryValidateObject(entity, context, validationResults, true);
 
             //kiểm tra mã trùng khi dữ liệu hợp lệ
             if (isValidCode)
             {
-                bool isDupplicate = CheckDupplicatedCode(entity).Success;
+                bool isDupplicate = true;
+                foreach (var property in properties)
+                {
+                    var unique = property.GetCustomAttribute<UniqueAttribute>();
+                    var propName = property.Name;
+                    var propValue = property.GetValue(entity);
+                    if (propValue != null)
+                    {
+                        if (unique != null)
+                        {
+                           isDupplicate = this._baseDL.CheckDuplicatedField((string)propValue, propName, typeof(T).Name).Count > 0;
+                            if (isDupplicate)
+                            {
+                                var code = $"{propName}";
+                                errorObject.Add(code, new List<string>() { string.Format(Resource.UserMsg_Dupplicated_Code, typeof(T).GetProperty(code).GetValue(entity)) });
+                               
+                            }
+                        }
+                    }
+                }
+ 
                 if (isDupplicate)
                 {
-                    var code = $"{typeof(T).Name}Code";
-                    errorObject = new ExpandoObject() as IDictionary<string, object>;
-                    errorObject.Add(code, new List<string>() { string.Format(Resource.UserMsg_Dupplicated_Code, typeof(T).GetProperty(code).GetValue(entity)) });
-                    response.StatusCode = System.Net.HttpStatusCode.OK;
+                    response.StatusCode = System.Net.HttpStatusCode.BadRequest;
                     response.Data = errorObject;
                     response.Success = false;
                     response.ErrorCode = ErrorCode.Duplicated;
                     return response;
                 }
-
             }
-
-
             //Nếu có lỗi
             if (errorObject.Count > 0)
             {
                 response.Success = false;
                 response.ErrorCode = ErrorCode.InvalidData;
                 response.StatusCode = System.Net.HttpStatusCode.BadRequest;
-
-                if (isValidObject)
-                {
-                    //sắp xếp lỗi theo thứ tự property
-                    var orderedErrorObject = new ExpandoObject() as IDictionary<string, object>;
-                    foreach (var property in properties)
-                    {
-                        var propName = property.Name;
-                        bool isContainsKey = ((IDictionary<String, object>)errorObject).ContainsKey(propName);
-                        if (isContainsKey)
-                        {
-                            var value = errorObject[propName];
-                            orderedErrorObject.Add(propName, value);
-                        }
-                    }
-                    response.Data = orderedErrorObject;
-                }
-                else
-                {
-                    //nếu dữ liệu gửi lên không binding được thì trả luôn lỗi các trường không thể binding
-                    response.Data = errorObject;
-                }
             }
-
             return response;
         }
 
@@ -416,7 +413,7 @@ namespace MISA.PROCESS.BL
         /// </summary>
         /// <param name="entities"></param>
         /// <returns></returns>
-        public ServiceResponse ValidateData(List<T> entities)
+        public virtual ServiceResponse ValidateData(List<T> entities)
         {
             var response = new ServiceResponse() { Success = true };
             var fields = new Dictionary<string, string>();
@@ -445,7 +442,8 @@ namespace MISA.PROCESS.BL
                         }
 
                         //nếu trường nào là unique thì thêm vào từ điển với key là tên trường của thực thể, value là các giá trị của trường đó
-                        // vd: UserCode: 'NV123', NV234
+                        // 
+                        // vd: UserCode: 'NV123', NV234 (nhiều user)
                         if (unique != null)
                         {
                             //nếu trường đã có trong dictionary thì cộng dồn giá trị
@@ -462,29 +460,9 @@ namespace MISA.PROCESS.BL
                 }
             });
             var errorValue = new Dictionary<string, List<string>>();
-
-
             if (validationResults.Count > 0)
             {
-
-                foreach (var result in validationResults)
-                {
-                    if (!string.IsNullOrEmpty(result.ErrorMessage))
-                    {
-                        var errorField = result.MemberNames.First();
-                        string errorMessage = result.ErrorMessage;
-                        if (!errorValue.ContainsKey(errorField))
-                        {
-                            errorValue.Add(errorField, new List<string>() { errorMessage });
-                        }
-                    }
-                }
-
-                response.Success = false;
-                response.ErrorCode = ErrorCode.InvalidData;
-                response.StatusCode = System.Net.HttpStatusCode.BadRequest;
-                response.Data = errorValue;
-                return response;
+                return HandleInValidData(response, validationResults, errorValue);
             }
 
             foreach (var key in fields.Keys)
@@ -508,22 +486,38 @@ namespace MISA.PROCESS.BL
         }
 
         /// <summary>
+        /// Lấy mã mới
+        /// </summary>
+        /// <returns></returns>
+        public virtual ServiceResponse GetNewCode()
+        {
+            var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK };
+            var code = this._baseDL.GetNewCode() + 1;
+            string stringCode = code.ToString();
+            while (stringCode.Length < (int)LengthRequire.CodeNumberLength)
+            {
+                stringCode = "0" + stringCode;
+            }
+            response.Data = $"NV{stringCode}";
+            return response;
+        }
+
+        /// <summary>
         /// Validate request gửi lên
         /// </summary>
         /// <param name="request"></param>
         /// <param name="validatePage"></param>
-        public void ValidateRequest(PagingRequest request, bool validatePage = true)
+        public virtual ServiceResponse ValidateRequest(PagingRequest request)
         {
-            if (validatePage)
+            var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true };
+
+            if (request.PageNumber == null)
             {
-                if (request.PageNumber == null)
-                {
-                    request.PageNumber = 1;
-                }
-                if (request.PageSize == null)
-                {
-                    request.PageSize = 15;
-                }
+                request.PageNumber = 1;
+            }
+            if (request.PageSize == null)
+            {
+                request.PageSize = 15;
             }
             if (request.Filter == null)
             {
@@ -533,10 +527,79 @@ namespace MISA.PROCESS.BL
             {
                 request.SortColumn = "ModifiedDate";
             }
-            request.Filter = request.Filter.Trim();
+            var conditions = request.ConditionQueries;
+            if (conditions != null)
+            {
+                var validationResults = new List<ValidationResult>();
+                ValidateConditions(validationResults, response, conditions);
+                var errorValue = new Dictionary<string, List<string>>();
+                if (validationResults.Count > 0)
+                {
+                    return HandleInValidData(response, validationResults, errorValue);
+
+                }
+
+            }
             int? offset = (request.PageNumber - 1) * request.PageSize;
             if (offset < 0) { offset = 0; }
             request.PageNumber = offset; //sql lấy từ vị trí 0
+            return response;
+        }
+
+        /// <summary>
+        /// Validate condition
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="conditions"></param>
+        /// <returns></returns>
+        private static void ValidateConditions(List<ValidationResult> validationResults, ServiceResponse response, List<ConditionQuery>? conditions)
+        {
+
+            conditions.ForEach(condition =>
+            {
+                if (condition.SubQuery != null)
+                {
+                    ValidateConditions(validationResults, response, condition.SubQuery);
+                }
+                //validate giá trị đầu vào
+                var context = new ValidationContext(condition);
+                response.Success = Validator.TryValidateObject(condition, context, validationResults, true);
+
+            });
+
+        }
+
+        /// <summary>
+        /// Xử lý lỗi trả về khi dữ liệu không hợp lệ
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="validationResults"></param>
+        /// <param name="errorValue"></param>
+        /// <returns></returns>
+        private static ServiceResponse HandleInValidData(ServiceResponse response, List<ValidationResult> validationResults, Dictionary<string, List<string>> errorValue)
+        {
+            foreach (var result in validationResults)
+            {
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    var errorField = result.MemberNames.First();
+                    string errorMessage = result.ErrorMessage;
+                    if (!errorValue.ContainsKey(errorField))
+                    {
+                        errorValue.Add(errorField, new List<string>() { errorMessage });
+                    }
+                    else
+                    {
+                        errorValue[errorField].Add(errorMessage);
+                    }
+                }
+            }
+
+            response.Success = false;
+            response.ErrorCode = ErrorCode.InvalidData;
+            response.StatusCode = System.Net.HttpStatusCode.BadRequest;
+            response.Data = errorValue;
+            return response;
         }
 
         /// <summary>
@@ -603,11 +666,42 @@ namespace MISA.PROCESS.BL
         }
 
         /// <summary>
+        /// Chuẩn hóa giá trị cho câu điều kiện where
+        /// </summary>
+        /// <param name="condition"></param>
+        public static void StandardizeValue(ConditionQuery condition)
+        {
+            if (condition.Value != null)
+            {
+                condition.Value = SanitizeInput(condition.Value);
+            }
+            if (condition.Column != null)
+            {
+                condition.Column = SanitizeInput(condition.Column);
+            }
+            condition.Operator = condition.Operator.ToUpper();
+            switch (condition.Operator)
+            {
+                case "LIKE":
+                    condition.Value = $"'%{condition.Value}%'";
+                    break;
+                case "IN":
+                    //nếu là IN thì chuyển value về dạng ('abc','cde',...)
+                    var values = $"({String.Join(",", condition.Value.Split(",").ToList().Select(value => $"'{value}'"))})";
+                    condition.Value = values;
+                    break;
+                default:
+                    condition.Value = $"'{condition.Value}'";
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Khử kí tự đặc biệt trong input
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public static string SanitizeInput(string input)
+        private static string SanitizeInput(string input)
         {
             // Danh sách kí tự cần loại bỏ
             string[] dangerousChars = new string[] { "'", "--", "/*", "*/", ";", "%", "_", "=" };
@@ -620,10 +714,57 @@ namespace MISA.PROCESS.BL
             return input;
         }
 
+        /// <summary>
+        /// trả về từ điển : tên bảng cần lưu : <tên bảng cân lưu, giá trị cần lưu, số lượng cần lưu>
+        /// </summary>
+        /// <param name="detailObjects">Từ điển lưu giá trị id </param>
+        /// <param name="entityID">ID của người dùng</param>
+        /// <param name="propName">Tên trường(RoleID) của bảng user_Role</param>
+        /// <param name="propValue">Danh sách id vai trò gửi lên</param>
+        private static void HandleDetailValueToSave(Dictionary<string, StringObject> detailObjects, Guid entityID, string propName, object? propValue)
+        {
+            if (propValue != null)
+            {
+                var detailListValue = (List<Guid>)propValue;// lấy danh sách id bảng detail
+
+                // chuyển sang dạng chuỗi để insert vào db dạng VALUES ('masterId', 'detailId'),('masterId', 'detailId'),...
+                var detailStringValue = String.Join(",", detailListValue.Select((detail) => $"('{entityID}','{detail}')"));
+                if (detailObjects.ContainsKey(propName))
+                {
+                    var valueObject = detailObjects[propName];
+                    valueObject.Count += detailListValue.Count;
+                    valueObject.Value += $",{detailStringValue}";
+                }
+                else
+                {
+                    var valueObject = new StringObject() { Name = propName, Count = detailListValue.Count, Value = detailStringValue };
+                    detailObjects.Add(valueObject.Name, valueObject);
+                }
+                
+            }
+            
+        }
+
+        /// <summary>
+        /// Kiểm tra điều kiện truy vấn hợp lệ hay không
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <returns></returns>
         public static bool IsValidCondition(ConditionQuery condition)
         {
             return !(String.IsNullOrEmpty(condition.Operator) || String.IsNullOrEmpty(condition.Relationship) || String.IsNullOrEmpty(condition.Column) || String.IsNullOrEmpty(condition.Value));
-        } 
+        }
+
+        /// <summary>
+        /// Kiểm tra điều kiện truy vấn đầu tiên hợp lệ hay không
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <returns></returns>
+        public static bool IsFirstConditionValid(ConditionQuery condition)
+        {
+            condition.Relationship = "";
+            return !(String.IsNullOrEmpty(condition.Operator) || String.IsNullOrEmpty(condition.Column) || String.IsNullOrEmpty(condition.Value));
+        }
         #endregion
     }
 }

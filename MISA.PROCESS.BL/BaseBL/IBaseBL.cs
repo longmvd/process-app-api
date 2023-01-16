@@ -33,6 +33,12 @@ namespace MISA.PROCESS.BL
         public ServiceResponse GetByID(Guid id);
 
         /// <summary>
+        /// Lấy mã mới
+        /// </summary>
+        /// <returns></returns>
+        public ServiceResponse GetNewCode();
+
+        /// <summary>
         /// Thêm 1 bản ghi
         /// </summary>
         /// <returns>Id bản ghi</returns>
@@ -44,7 +50,7 @@ namespace MISA.PROCESS.BL
         /// </summary>
         /// <returns>1 bản ghi</returns>
         /// Created by: MDLONG(23/12/2022)
-        public ServiceResponse UpdateOneByID(Guid id, T entity, ModelStateDictionary modelStateDictionary);
+        public ServiceResponse UpdateOneByID(Guid id, T entity);
 
         /// <summary>
         /// Xóa bản ghi theo id
@@ -65,6 +71,6 @@ namespace MISA.PROCESS.BL
         /// </summary>
         /// <param name="request"></param>
         /// <param name="validatePage"></param>
-        public void ValidateRequest(PagingRequest request, bool validatePage = true);
+        public ServiceResponse ValidateRequest(PagingRequest request);
     }
 }

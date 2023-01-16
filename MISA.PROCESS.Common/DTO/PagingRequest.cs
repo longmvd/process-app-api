@@ -26,21 +26,6 @@ namespace MISA.PROCESS.Common.DTO
         public string? Filter { get; set; }
 
         /// <summary>
-        /// Danh sách ID vị trí
-        /// </summary>
-        public List<string>? JobPositionIDs { get; set; }
-
-        /// <summary>
-        /// ID Phòng ban
-        /// </summary>
-        public string? DepartmentID { get; set; }
-
-        /// <summary>
-        /// ID vai trò
-        /// </summary>
-        public string? RoleID { get; set; }
-
-        /// <summary>
         /// Cột cần sắp xếp
         /// </summary>
         public string? SortColumn { get; set; }

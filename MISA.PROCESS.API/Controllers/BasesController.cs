@@ -51,6 +51,11 @@ namespace MISA.PROCESS.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy bản ghi theo filter
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("{filter}")]
         public IActionResult GetByFilter(PagingRequest request)
         {
@@ -61,7 +66,14 @@ namespace MISA.PROCESS.API.Controllers
                 {
                     return StatusCode((int)response.StatusCode, response.Data);
                 }
-                return BadRequest(response.Data);
+                return BadRequest(new ErrorResult
+                {
+                    ErrorCode = response.ErrorCode,
+                    DevMsg = Resource.UserMsg_Invalid_Data,
+                    UserMsg = Resource.UserMsg_Invalid_Data,
+                    MoreInfo = response.Data,
+                    TraceId = HttpContext.TraceIdentifier
+                });
             }
             catch (Exception e)
             {
@@ -137,21 +149,10 @@ namespace MISA.PROCESS.API.Controllers
                 }
                 else
                 {
-                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                    {
-                        return StatusCode((int)response.StatusCode, new ErrorResult
-                        {
-                            ErrorCode = ErrorCode.Failed,
-                            DevMsg = Resource.UserMsg_Add_Failed,
-                            UserMsg = Resource.UserMsg_Add_Failed,
-                            MoreInfo = response.Data,
-                            TraceId = HttpContext.TraceIdentifier
-                        });
-                    }
 
                     return StatusCode((int)response.StatusCode, new ErrorResult
                     {
-                        ErrorCode = response.ErrorCode & ErrorCode.InvalidData,
+                        ErrorCode = response.ErrorCode != ErrorCode.None ? response.ErrorCode : ErrorCode.InvalidData,
                         DevMsg = Resource.DevMsg_Exception,
                         UserMsg = Resource.UserMsg_Invalid_Data,
                         MoreInfo = response.Data,
@@ -188,7 +189,7 @@ namespace MISA.PROCESS.API.Controllers
         {
             try
             {
-                var response = _baseBL.UpdateOneByID(recordId, entity, ModelState);
+                var response = _baseBL.UpdateOneByID(recordId, entity);
                 if (response.Success && response.StatusCode != null)
                 {
                     return StatusCode((int)response.StatusCode, response.Data);
@@ -256,6 +257,36 @@ namespace MISA.PROCESS.API.Controllers
                     TraceId = HttpContext.TraceIdentifier
                 });
 
+            }
+        }
+
+        /// <summary>
+        /// Lấy mã mới
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("newCode")]
+        public IActionResult GetNewCode()
+        {
+
+            try
+            {
+                var response = this._baseBL.GetNewCode();
+                //xử lý kết quả trả về
+                return StatusCode((int)response.StatusCode, response.Data);
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult
+                {
+                    ErrorCode = ErrorCode.Exception,
+                    DevMsg = Resource.DevMsg_Exception,
+                    UserMsg = Resource.UserMsg_Exception,
+                    MoreInfo = Resource.DevMsg_Exception,
+                    TraceId = HttpContext.TraceIdentifier
+                });
             }
         }
     }

@@ -69,7 +69,11 @@ namespace MISA.PROCESS.DL
         /// <returns></returns>
         public List<string> CheckDuplicatedField(string values, string field, string entityName);
 
-
+        /// <summary>
+        /// Lấy mã mới
+        /// </summary>
+        /// <returns></returns>
+        public int GetNewCode();
 
     }
 }
