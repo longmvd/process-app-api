@@ -52,6 +52,44 @@ namespace MISA.PROCESS.API.Controllers
         }
 
         /// <summary>
+        /// Lấy bản ghi theo filter
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost("{filter}")]
+        public IActionResult GetByFilter(PagingRequest request)
+        {
+            try
+            {
+                var response = this._baseBL.GetByFilter(request);
+                if (response.Success)
+                {
+                    return StatusCode((int)response.StatusCode, response.Data);
+                }
+                return BadRequest(new ErrorResult
+                {
+                    ErrorCode = response.ErrorCode,
+                    DevMsg = Resource.UserMsg_Invalid_Data,
+                    UserMsg = Resource.UserMsg_Invalid_Data,
+                    MoreInfo = response.Data,
+                    TraceId = HttpContext.TraceIdentifier
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult
+                {
+                    ErrorCode = ErrorCode.Exception,
+                    DevMsg = Resource.DevMsg_Exception,
+                    UserMsg = Resource.UserMsg_Exception,
+                    MoreInfo = Resource.DevMsg_Exception,
+                    TraceId = HttpContext.TraceIdentifier
+                });
+            }
+        }
+
+        /// <summary>
         /// Lấy thông tin 1 bản ghi theo id
         /// </summary>
         /// <param name="recordId"></param>
@@ -105,27 +143,16 @@ namespace MISA.PROCESS.API.Controllers
             try
             {
                 var response = _baseBL.Insert(entities);
-                if (response.Success)
+                if (response.Success && response.StatusCode !=null)
                 {
                     return StatusCode((int)response.StatusCode, response.Data);
                 }
                 else
                 {
-                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                    {
-                        return StatusCode((int)response.StatusCode, new ErrorResult
-                        {
-                            ErrorCode = ErrorCode.Failed,
-                            DevMsg = Resource.UserMsg_Add_Failed,
-                            UserMsg = Resource.UserMsg_Add_Failed,
-                            MoreInfo = response.Data,
-                            TraceId = HttpContext.TraceIdentifier
-                        });
-                    }
 
                     return StatusCode((int)response.StatusCode, new ErrorResult
                     {
-                        ErrorCode = response.ErrorCode & ErrorCode.InvalidData,
+                        ErrorCode = response.ErrorCode != ErrorCode.None ? response.ErrorCode : ErrorCode.InvalidData,
                         DevMsg = Resource.DevMsg_Exception,
                         UserMsg = Resource.UserMsg_Invalid_Data,
                         MoreInfo = response.Data,
@@ -160,11 +187,10 @@ namespace MISA.PROCESS.API.Controllers
         [HttpPut("{recordId}")]
         public IActionResult Update([FromRoute] Guid recordId, [FromBody] T entity)
         {
-
             try
             {
-                var response = _baseBL.UpdateOneByID(recordId, entity, ModelState);
-                if (response.Success)
+                var response = _baseBL.UpdateOneByID(recordId, entity);
+                if (response.Success && response.StatusCode != null)
                 {
                     return StatusCode((int)response.StatusCode, response.Data);
                 }
@@ -231,6 +257,36 @@ namespace MISA.PROCESS.API.Controllers
                     TraceId = HttpContext.TraceIdentifier
                 });
 
+            }
+        }
+
+        /// <summary>
+        /// Lấy mã mới
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("newCode")]
+        public IActionResult GetNewCode()
+        {
+
+            try
+            {
+                var response = this._baseBL.GetNewCode();
+                //xử lý kết quả trả về
+                return StatusCode((int)response.StatusCode, response.Data);
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult
+                {
+                    ErrorCode = ErrorCode.Exception,
+                    DevMsg = Resource.DevMsg_Exception,
+                    UserMsg = Resource.UserMsg_Exception,
+                    MoreInfo = Resource.DevMsg_Exception,
+                    TraceId = HttpContext.TraceIdentifier
+                });
             }
         }
     }

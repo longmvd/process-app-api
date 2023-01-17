@@ -1,5 +1,6 @@
 ﻿using MISA.PROCESS.Common;
 using MISA.PROCESS.Common.DTO;
+using MISA.PROCESS.Common.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,13 @@ namespace MISA.PROCESS.DL
         public IEnumerable<T> GetAll();
 
         /// <summary>
+        /// Lấy bản ghi theo filter
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public PagingResult<T> GetByFilter(PagingRequest request);
+
+        /// <summary>
         /// Lấy bản ghi theo id
         /// </summary>
         /// <returns>1 bản ghi</returns>
@@ -30,7 +38,7 @@ namespace MISA.PROCESS.DL
         /// </summary>
         /// <returns>Id bản ghi</returns>
         /// Created by: MDLONG(11/11/2022)
-        public int Insert(StringObject entities, StringObject? detailEntities);
+        public int Insert(StringObject entities, List<StringObject>? detailEntities);
 
         /// <summary>
         /// Cập nhật bản ghi theo id
@@ -61,7 +69,11 @@ namespace MISA.PROCESS.DL
         /// <returns></returns>
         public List<string> CheckDuplicatedField(string values, string field, string entityName);
 
-
+        /// <summary>
+        /// Lấy mã mới
+        /// </summary>
+        /// <returns></returns>
+        public int GetNewCode();
 
     }
 }

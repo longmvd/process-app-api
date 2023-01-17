@@ -13,7 +13,7 @@ namespace MISA.PROCESS.Common.Enums
     /// Created by: MDLONG(23/12/2022)
     public enum ErrorCode
     {
-
+        None = 0,
         /// <summary>
         /// Lỗi gặp Exception
         /// </summary>

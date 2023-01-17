@@ -35,8 +35,11 @@ namespace MISA.PROCESS.DL
                 {
                     if (!result.ContainsKey(user.UserID))//nếu user chưa có trong từ điển thì thêm vào
                         result.Add(user.UserID, user);
-                    User working = result[user.UserID];//nếu có thì thêm vai trò cho user đó
-                    working.Roles.Add(role);
+                    var working = result[user.UserID];//nếu có thì thêm vai trò cho user đó
+                    if (working.Roles != null)
+                    {
+                        working.Roles.Add(role);
+                    }
                     return user;
                 },
                 parameters,
@@ -50,52 +53,15 @@ namespace MISA.PROCESS.DL
             }
         }
 
-        public PagingResult<User> GetByFilter(PagingRequest request)
-        {
-            PagingResult<User> paging = new PagingResult<User>();
-            string storedProcedure = String.Format(Procedure.GET_BY_FILTER, "user");
-            var jobPositionIDs = request.JobPositionIDs != null ? String.Join(",", request.JobPositionIDs) : null;
-            var parameter = new DynamicParameters();
-            parameter.Add("@Keyword", request.Filter);
-            parameter.Add("@JobPositionID", jobPositionIDs);
-            parameter.Add("@DepartmentID", request.DepartmentID);
-            parameter.Add("@RoleID", request.RoleID);
-            parameter.Add("@Offset", request.PageNumber);
-            parameter.Add("@Limit", request.PageSize);
-            parameter.Add("@SortColumn", request.SortColumn != null ? request.SortColumn : "ModifiedDate");
-            parameter.Add("@SortOrder", request.Desc ? "Desc" : "Asc");
-
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
-            {
-                var resultQuery = mySqlConnection.QueryMultiple(storedProcedure, parameter, commandType: CommandType.StoredProcedure);
-                var totalRecord = resultQuery.Read<int>().First();
-                var users = resultQuery.Read<User>().ToList();
-                int? totalPage = request.PageSize != null ? Convert.ToInt32(Math.Ceiling(totalRecord / (decimal)request.PageSize)) : null;
-                paging.Data = users;
-                if (users.ToArray().Length == 0)
-                {
-                    paging.TotalRecord = 0;
-                    paging.TotalPage = 0;
-                }
-                else
-                {
-                    paging.TotalRecord = totalRecord;
-                    paging.TotalPage = totalPage;
-                }
-                return paging;
-            }
-
-        }
-
-       /// <summary>
-       /// Cập nhật theo id
-       /// </summary>
-       /// <param name="id">id</param>
-       /// <param name="deleteRole">đối tượng cần xóa</param>
-       /// <param name="insertRole">đối tượng cần thêm</param>
-       /// <param name="modifiedBy">sửa bởi</param>
-       /// <returns></returns>
-        public bool UpdateOneByID(Guid id, StringObject deleteRole, StringObject insertRole, string modifiedBy)
+        /// <summary>
+        /// Cập nhật theo id
+        /// </summary>
+        /// <param name="id">id</param>
+        /// <param name="deleteRole">đối tượng cần xóa</param>
+        /// <param name="insertRole">đối tượng cần thêm</param>
+        /// <param name="modifiedBy">sửa bởi</param>
+        /// <returns></returns>
+        public bool UpdateOneByID(Guid id, StringObject deleteRole, StringObject insertRole, string roleNames, string modifiedBy)
         {
             string storedProcedureName = String.Format(Procedure.UPDATE, typeof(User).Name);
 
@@ -103,12 +69,14 @@ namespace MISA.PROCESS.DL
             parameters.Add("@UserID", id);
             parameters.Add("@DeleteRoleIDs", deleteRole.Value);
             parameters.Add("@InsertRoleIDs", insertRole.Value);
+            parameters.Add("@RoleNames", roleNames);
             parameters.Add("@ModifiedDate", DateTime.Now);
             parameters.Add("@ModifiedBy", modifiedBy);
 
-            using (var mySqlConnection = new MySqlConnection(DatabaseContext.ConnectionString))
+            var result = true;
+            OpenDB();
+            if (mySqlConnection != null)
             {
-                mySqlConnection.Open();
                 using (var transaction = mySqlConnection.BeginTransaction())
                 {
                     try
@@ -120,21 +88,25 @@ namespace MISA.PROCESS.DL
                         if (roleDeleted != deleteRole.Count || roleInserted != insertRole.Count)
                         {
                             transaction.Rollback();
-                            return false;
+                            result = false;
                         }
-                        transaction.Commit();
-                        return true;
+                        else
+                        {
+                            transaction.Commit();
+                            result = true;
+                        }
                     }
                     catch (Exception e)
                     {
                         Console.WriteLine(e);
                         transaction.Rollback();
-                        return false;
+                        result = false;
                     }
+                    CloseDB();
                 }
-
             }
 
+            return result;
         }
     }
 }

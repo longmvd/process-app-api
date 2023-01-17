@@ -27,14 +27,14 @@ namespace MISA.PROCESS.Common.Entities
         /// <summary>
         /// Mã người dùng
         /// </summary>
-        [Required]
+        [Required(ErrorMessage = "Mã người dùng Không để trống.")]
         [Unique]
         public string UserCode { get; set; }
 
         /// <summary>
         /// Tên người dùng
         /// </summary>
-        [Required]
+        [Required(ErrorMessage = "Tên người dùng Không để trống.")]
         public string UserName { get; set; }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace MISA.PROCESS.Common.Entities
         /// </summary>
         /// 
         [Required]
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Email không đúng định dạng")]
         [Unique]
         public string Email { get; set; }
 
@@ -92,9 +92,16 @@ namespace MISA.PROCESS.Common.Entities
         /// <summary>
         /// Trạng thái
         /// </summary>
-        /// 
         [Required]
         public Status Status { get; set; }
+
+        //[SqlIgnore]
+        //[ManyToMany]
+        //public List<Guid>? DepartmentIDs { get; set; }
+
+        //[SqlIgnore]
+        //[ManyToMany]
+        //public List<Guid>? JobPositionIDs { get; set; }
 
     }
 }

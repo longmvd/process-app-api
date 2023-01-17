@@ -30,6 +30,11 @@ namespace MISA.PROCESS.Common.Constants
         public static string GET_BY_FILTER = "Proc_{0}_SelectFilter";
 
         /// <summary>
+        /// Lấy mã lớn nhất
+        /// </summary>
+        public static string GET_MAX_CODE = "Proc_{0}_SelectMaxCode";
+
+        /// <summary>
         /// Kiểm tra mã trùng
         /// </summary>
         public static string CHECK_DUPLICATED_CODE = "Proc_{0}_CheckDuplicatedCode";

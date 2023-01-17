@@ -33,19 +33,13 @@ namespace MISA.PROCESS.BL
         }
 
         /// <summary>
-        /// Lấy người dùng theo điều kiện và phân trang
+        /// Lấy bản ghi theo id
         /// </summary>
-        /// <param name="request"></param>
-        /// <returns>Paging</returns>
-        ///Created by: MDLONG(18/11/2022)
-        //public ServiceResponse GetByFilter(PagingRequest request)
-        //{
-        //    ValidateRequest(request);
-
-        //    return _userDL.GetByFilter(request);
-        //}
-
-        public override ServiceResponse UpdateOneByID(Guid id, User entity, ModelStateDictionary modelStateDictionary)
+        /// <param name="id"></param>
+        /// <param name="entity"></param>
+        /// <param name="modelStateDictionary"></param>
+        /// <returns></returns>
+        public override ServiceResponse UpdateOneByID(Guid id, User entity)
         {
             ServiceResponse response = new ServiceResponse() { Success = true, StatusCode = System.Net.HttpStatusCode.OK };
             var errorObject = new ExpandoObject() as IDictionary<string, object>;
@@ -69,8 +63,6 @@ namespace MISA.PROCESS.BL
             }
             else
             {
-                //lấy tất cả id vai trò cũ
-                //var oldRoleIDs = this._userDL.GetByID(id).Roles.Select((role) => role.RoleID.ToString()).ToList();
 
                 var deleteRoleIDs = String.Join(",", deleteRoles);
 
@@ -78,7 +70,7 @@ namespace MISA.PROCESS.BL
                 var deleteRole = new StringObject() {Value = deleteRoleIDs, Count = deleteRoles.Count };
                 var insertRole = new StringObject() {Value = insertRoleIDs, Count = insertRoles.Count };
 
-                response.Success = this._userDL.UpdateOneByID(id, deleteRole, insertRole, entity.UserName);
+                response.Success = this._userDL.UpdateOneByID(id, deleteRole, insertRole, entity.RoleNames, entity.UserName);
                 response.Data = true;
                 if (!response.Success)
                 {
@@ -89,57 +81,6 @@ namespace MISA.PROCESS.BL
             }
             return response;
 
-        }
-
-        public override ServiceResponse GetByFilter(PagingRequest request)
-        {
-            ValidateRequest(request);
-            var response = new ServiceResponse() { StatusCode = System.Net.HttpStatusCode.OK, Success = true};
-            var paging = this._userDL.GetByFilter(request);
-            response.Data = paging;
-            
-
-            return response;
-        }
-
-        /// <summary>
-        /// xử lý validate request
-        /// </summary>
-        /// <returns></returns>
-        /// Created by: MDLONG(20/11/2022)
-        private void ValidateRequest(PagingRequest request, bool validatePage = true)
-        {
-            if (validatePage)
-            {
-                if (request.PageNumber == null)
-                {
-                    request.PageNumber = 1;
-                }
-                if (request.PageSize == null)
-                {
-                    request.PageSize = 15;
-                }
-            }
-            if (request.Filter == null)
-            {
-                request.Filter = "";
-            }
-            if(request.JobPositionIDs?.Count == 0)
-            {
-                request.JobPositionIDs = null;
-            }
-            if(request.DepartmentID == "")
-            {
-                request.DepartmentID = null;
-            }
-            if (request.RoleID == "")
-            {
-                request.RoleID = null;
-            }
-            request.Filter = request.Filter.Trim();
-            int? offset = (request.PageNumber - 1) * request.PageSize;
-            if(offset < 0 ) { offset = 0; }
-            request.PageNumber = offset; //sql lấy từ vị trí 0
         }
         #endregion
     }

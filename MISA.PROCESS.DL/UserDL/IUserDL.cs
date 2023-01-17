@@ -22,14 +22,7 @@ namespace MISA.PROCESS.DL
         /// <param name="insertRole">vai trò cần thêm</param>
         /// <param name="ModifiedBy"></param>
         /// <returns></returns>
-        public bool UpdateOneByID(Guid id, StringObject deleteRole, StringObject insertRole, string modifiedBy);
-
-        /// <summary>
-        /// Tìm kiếm phân trang
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns>Phân trang</returns>
-        public PagingResult<User> GetByFilter(PagingRequest request);
+        public bool UpdateOneByID(Guid id, StringObject deleteRole, StringObject insertRole, string roleNames, string modifiedBy);
 
 
     }

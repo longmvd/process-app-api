@@ -161,7 +161,7 @@
     <comment>Message trả về cho user khi gọi API gặp exception</comment>
   </data>
   <data name="UserMsg_Invalid_Data" xml:space="preserve">
-    <value>Nhập sai trường thông tin.</value>
+    <value>Thông tin không hợp lệ.</value>
     <comment>Message trả về cho user khi nhập đầu vào không hợp lệ</comment>
   </data>
   <data name="UserMsg_Not_Found" xml:space="preserve">

@@ -11,8 +11,6 @@ namespace MISA.PROCESS.BL
 {
     public interface IUserBL : IBaseBL<User>
     {
-       
-
     }
 
 }
